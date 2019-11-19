@@ -1,0 +1,41 @@
+robots:
+ robot_0:
+  specs: 
+    vel: 1.0
+    battery: 1.0
+  tools:
+    tool_1: true
+    tool_2: false
+    
+ robot_1:
+  specs: 
+    vel: 1.0
+    battery: 1.0
+  tools:
+    tool_1: true
+    tool_2: false
+    
+ robot_2:
+  specs: 
+    vel: 1.0
+    battery: 1.0
+  tools:
+    tool_1: true
+    tool_2: false
+    
+ robot_3:
+  specs: 
+    vel: 1.0
+    battery: 1.0
+  tools:
+    tool_1: true
+    tool_2: false
+    
+ robot_4:
+  specs: 
+    vel: 1.0
+    battery: 1.0
+  tools:
+    tool_1: true
+    tool_2: false
+    
