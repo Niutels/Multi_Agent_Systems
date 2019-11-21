@@ -1,5 +1,0 @@
-<launch>
-  <node pkg="gazebo_tutorials" name="control_node"  type="control_node.py" output="screen"> 
-  </node>
-  <rosparam command="load" file="$(find gazebo_tutorials)/params/robots.yaml" />
-</launch>

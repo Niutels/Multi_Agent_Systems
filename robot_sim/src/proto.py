@@ -8,7 +8,7 @@ import yaml
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Twist,Pose2D
 from math import atan2,pi,sqrt,pow,cos,sin
-from gazebo_tutorials.srv import pos_task,pos_taskResponse
+from robot_sim.srv import pos_task,pos_taskResponse
 
 # def toEuler(pose)
 #     quaternion = (

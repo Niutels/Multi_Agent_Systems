@@ -2,7 +2,7 @@
 
 import sys
 import rospy
-from gazebo_tutorials.srv import pos_task
+from robot_sim.srv import pos_task
 from geometry_msgs.msg import Pose2D
 
 def find_robots():

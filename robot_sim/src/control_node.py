@@ -10,7 +10,7 @@ from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Twist,Pose2D
 from rosgraph_msgs.msg import Clock
 from math import atan2,pi,sqrt,pow,cos,sin
-from gazebo_tutorials.srv import pos_task,pos_taskResponse
+from robot_sim.srv import pos_task,pos_taskResponse
 # from params import robots
 # def toEuler(pose)
 #     quaternion = (
@@ -32,17 +32,31 @@ class Robot:
 	def odometryCb(self,msg):
 		self.odom_msg = msg.pose.pose
 		self.updated = True
+		# print msg
 
 	def task_reception(self,req):
 		self.tasks.append(req)
 		# print req
 
 	def loop(self):
+		# print len(self.tasks)
+		# print len(self.tasks)
 		if len(self.tasks)!=0:
+			rospy.wait_for_message(self.name+"/odom", Odometry)
+			print "/\nState of " + self.name
+			print "Pose: " , "x : ", self.odom_msg.position.x , " | y : " , self.odom_msg.position.y , " | z : " , self.odom_msg.position.z
+			print "Vel:  " , "x : ", self.vel_x , " | theta : ",self.vel_t
+			print "Self-update: ",self.updated
+			print "--------------------------"
+			print "Tasks amount: ",len(self.tasks)
+			print "Target: ","x : ", self.tasks[0].position.x," | y : ", self.tasks[0].position.y
+
 			if self.tasks[0].type == "position":
-				self.pose_task = self.tasks[0].position 
-				rospy.wait_for_message(self.name+"/odom", Odometry)
-				self.moving_to_target()
+				try:
+					self.pose_task = self.tasks[0].position 
+					self.moving_to_target()
+				except:
+					print "Could not move to target"
 
 	def moving_to_target(self):
 		pose = self.odom_msg
@@ -53,7 +67,7 @@ class Robot:
 		Kp = 0.5
 		vel_msg = Twist()
 		# print targ
-		print len(self.tasks) , self.updated
+		# print len(self.tasks) , self.updated
 
 		if len(self.tasks)!=0 and self.updated :
 			self.updated= False
@@ -85,7 +99,9 @@ class Robot:
 			self.updated 	 = False
 			vel_msg.linear.x = 0
 			vel_msg.angular.z= 0
-		print vel_msg
+		# print vel_msg
+		self.vel_x = vel_msg.linear.x
+		self.vel_t = vel_msg.angular.z
 		self.pub.publish(vel_msg)
 		# print vel_msg
 
@@ -101,6 +117,8 @@ class Robot:
 		self.odom_msg = Odometry()
 		self.pose_task = Pose2D()
 		self.updated = False
+		self.vel_x = 0
+		self.vel_t = 0
 		# self.sub_scan = rospy.Subscriber(self.name+"/scan", Pose2D	, self.pose2dCb)
 		self.pub = rospy.Publisher(self.name+"/cmd_vel", Twist, queue_size=10)
 		self.s = rospy.Service(self.name+'_task_reception', pos_task, self.task_reception)
@@ -129,12 +147,11 @@ if __name__ == '__main__':
 	j = 0
 	while True:
 		robot_name = "robot_"+str(j)
-		if robot_name in robots_params:
+		if robot_name in list_names:
 			list_robots.append(Robot(robots_params[robot_name],robot_name))
 			j += 1
 		else:
 			break
 	global list_robots
-	rate = rospy.Rate(1)
 	while not rospy.is_shutdown():
 		rospy.spin()

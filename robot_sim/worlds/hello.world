@@ -10,6 +10,6 @@
     </include>
 
     <!-- reference to your plugin -->
-    <plugin name="gazebo_tutorials" filename="libgazebo_tutorials.so"/>
+    <plugin name="robot_sim" filename="librobot_sim.so"/>
   </world>
 </sdf>
