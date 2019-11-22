@@ -17,11 +17,12 @@ find_package(gazebo REQUIRED)
 add_service_files(
   FILES
   pos_task.srv
+  other_task.srv
 )
 
 add_message_files(
    FILES
-   Pose2D.msg
+#   Pose2D.msg
  )
 
 generate_messages(

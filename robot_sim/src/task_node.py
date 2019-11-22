@@ -2,7 +2,7 @@
 
 import sys
 import rospy
-from robot_sim.srv import pos_task
+from robot_sim.srv import pos_task,other_task
 from geometry_msgs.msg import Pose2D
 
 def find_robots():
@@ -14,34 +14,37 @@ def find_robots():
             list_robots.append(topic_i[0].split("/")[1])
     return list_robots
 
-def send_task(x, y, task_type):
+def pos_task_reception(req):
+    list_tasks.append(req)
+
+def other_task_reception(req):
+    list_tasks.append(req)
+
+def send_task(task_data, task_type):
     list_names = find_robots()
     for robot in list_names:
         rospy.wait_for_service(robot+'_task_reception')
-        print robot
-        # while 
         try:
-            print "tried"
-            task_request = rospy.ServiceProxy(robot+'_task_reception', pos_task)
-            pose        = Pose2D()
-            pose.x      = x
-            pose.y      = y
-            task_response = task_request(pose,task_type)
-            # resp1 = task_reception(x, y)
-            # return resp1.sum
+            print "sending "+task_type
+            if task_type == "position":
+                task_request = rospy.ServiceProxy(robot+'_task_reception/pos', pos_task)
+            elif task_type == "other":
+                task_request = rospy.ServiceProxy(robot+'_task_reception/pos', other_task)
+            task_response = task_request(task_data,task_type)
         except rospy.ServiceException, e:
             print "Service call failed: %s"%e
 
-def usage():
-    return "%s [x y]"%sys.argv[0]
+def task_handler():
+    start = True
+    while len(list_tasks)!=0 or start == True:
+        if len(list_tasks)!=0:
+            start = False
+            send_task(list_tasks[0].task_data,list_tasks[0].task_type)
 
 if __name__ == "__main__":
-    if len(sys.argv) == 4:
-        x         = int(sys.argv[1])
-        y         = int(sys.argv[2])
-        task_type = str(sys.argv[3])
-    else:
-        print usage()
-        sys.exit(1)
-    print "Requesting pos x: %s | y: %s"%(x, y)
-    send_task(x,y,task_type)
+    list_tasks=[]
+    global list_tasks
+    pos_serv = rospy.Service('task_node/pos', pos_task, pos_task_reception)
+    other_serv = rospy.Service('task_node/other', other_task, other_task_reception)
+    task_handler()
+
