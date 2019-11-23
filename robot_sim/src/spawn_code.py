@@ -15,8 +15,10 @@ if __name__ == '__main__':
     # spawn_model = rospy.ServiceProxy("gazebo/spawn_sdf_model", SpawnModel)
     spawn_model = rospy.ServiceProxy("gazebo/spawn_urdf_model", SpawnModel)
     # user_input = sys.argv
-    init_pose = rospy.get_param('~init_pose').split(",")
-    num = int(rospy.get_param('~additional_robots'))
+    # init_pose = rospy.get_param('~init_pose').split(",")
+    # num = int(rospy.get_param('~additional_robots'))
+    init_pose = [-1 , 0 , 0]
+    num = 1
     # with open("$GAZEBO_MODEL_PATH/turtlebot3_waffle_pi/model.sdf", "r") as f:
     # rospack = rospkg.RosPack()
     # print(rospack.get_path('turtlebot3_gazebo_plugin'))
@@ -31,10 +33,15 @@ if __name__ == '__main__':
 
     for number in range(0,num+1):
         item_name = "turtlebot3_waffle_pi_{0}".format(number)
+        # item_name = "robot_{0}".format(number)
         print("Deleting model:%s", item_name)
-        delete_model(item_name)    
-        print("Deleting model:%s", item_name)
-        delete_model(item_name)
+        try:
+            delete_model(item_name)    
+        except:
+            print "what happened ?"
+
+        # print("Deleting model:%s", item_name)
+        # delete_model(item_name)
 
     print("Spawning model:%s", "turtlebot3_waffle_pi")
     item_pose   =  PoseStamped()# Pose(Point(x=bin_x, y=bin_y,    z=2),   orient)

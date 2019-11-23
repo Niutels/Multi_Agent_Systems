@@ -8,18 +8,25 @@ import rospkg
 import yaml
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Twist,Pose2D
+from sensor_msgs.msg import LaserScan
 from rosgraph_msgs.msg import Clock
 from math import atan2,pi,sqrt,pow,cos,sin
 from robot_sim.srv import pos_task,pos_taskResponse,other_task,other_taskResponse
+# global old_time
+# old_time=0
 
 def getrpy(q):
 	return tf.transformations.euler_from_quaternion([q.x,q.y,q.z,q.w])
-
+# 
 class Robot:
 
 	def odometryCb(self,msg):
 		self.odom_msg = msg.pose.pose
-		self.updated = True
+		self.updated_odom = True
+
+	def laserCb(self,msg):
+		self.laser_msg = msg
+		self.updated_scan = True
 
 	def doability(self,req):
 		if req.task_type == "position":
@@ -36,37 +43,47 @@ class Robot:
 		return valid
 
 	def task_completion(self):
-		# self.tasks[0].task_success = True
-		self.completed_tasks.append(tasks[0].copy())
-		# self.tasks[0].remove()
+		print "task completed ! "
+		self.tasks[0].task_done = True
+		self.tasks[0].task_robot = self.name
+		self.completed_tasks.append(self.tasks[0])
+		self.tasks.pop(0)
 
 	def loop(self,time):
+		global old_time
 		if len(self.tasks)!=0:
 			if self.tasks[0].task_type == "position":
 				rospy.wait_for_message(self.name+"/odom", Odometry)
-				if time%2 == 0:
-					print time
-					print "/\nState of " + self.name
+				rospy.wait_for_message(self.name+"/scan", LaserScan)
+				if (time-old_time) % 5  == 0 and time != old_time:
+					print "Time: ",time,"(s)"
+					print "/\n/\nState of " + self.name ,self.name
 					print "Pose: " , "x : ", self.odom_msg.position.x , " | y : " , self.odom_msg.position.y , " | z : " , self.odom_msg.position.z
 					print "Vel:  " , "x : ", self.vel_x , " | theta : ",self.vel_t
-					print "Self-update: ",self.updated
+					print "Self-update odom: ",self.updated_odom
+					print "Self-update scan: ",self.updated_scan
 					print "--------------------------"
 					print "Tasks amount: ",len(self.tasks)
-					print "Target: ","x : ", self.tasks[0].task_data.x," | y : ", self.tasks[0].task_data.y
+					if len(self.tasks)!=0:
+						print "Target: ","x : ", self.tasks[0].task_data.x," | y : ", self.tasks[0].task_data.y
+						print "Norm: ",self.norm
+						print "Task done: ",self.tasks[0].task_done
+					print "Completed tasks: ", self.completed_tasks
 				try:
 					self.pose_task = self.tasks[0].task_data 
 					self.moving_to_target()
 				except:
 					print "Could not move to target"
-		
+
 	def moving_to_target(self):
 		pose = self.odom_msg
+		scan = self.laser_msg
 		targ = self.pose_task
 		Kp = 0.5
 		vel_msg = Twist()
-
-		if len(self.tasks)!=0 and self.updated :
-			self.updated= False
+		if self.updated_scan and self.updated_odom :
+			self.updated_scan = False
+			self.updated_odom = False
 			rpy 		= getrpy(pose.orientation)
 			yaw 		= rpy[2]
 			angle_worldtotask = atan2((targ.y-pose.position.y),(targ.x-pose.position.x))
@@ -74,37 +91,24 @@ class Robot:
 			diff_angle 	= (angle_worldtotask-yaw)
 			diff_x		= (targ.x-pose.position.x)
 			diff_y		= (targ.y-pose.position.y)
-			norm 		= sqrt(pow(diff_x,2)+pow(diff_y,2))
-			if norm > self.dist_tol:
-				# unit_direction = [diff_x/norm , diff_y/norm]
-				if norm > pi:
-					if abs(angle_worldtotask-yaw) > 0.5:
-						vel_msg.linear.x = 0.0
-						vel_msg.angular.z = Kp*diff_angle
-					else:
-						vel_msg.linear.x = Kp 
-						vel_msg.angular.z = 0.0
-				else:
-					if abs(angle_worldtotask-yaw) > 0.1*norm+0.1:
-						vel_msg.linear.x = 0.0
-						vel_msg.angular.z = Kp*diff_angle
-					else:
-						vel_msg.linear.x = Kp 
-						vel_msg.angular.z = 0.001*Kp*diff_angle
+			self.norm 	= sqrt(pow(diff_x,2)+pow(diff_y,2))
+			if self.norm > self.dist_tol:
+				vel_msg.linear.x = Kp*self.norm
+				vel_msg.angular.z = Kp*diff_angle
+				# print vel_msg
 			else:
-				task_completion()
+				if self.tasks[0].task_done == False:
+					self.task_completion()
 				vel_msg.linear.x = 0
 				vel_msg.angular.z= 0
-				self.vel_x = vel_msg.linear.x
-				self.vel_t = vel_msg.angular.z
-				self.pub.publish(vel_msg)
-		elif self.updated:
-			self.updated 	 = False
-			vel_msg.linear.x = 0
-			vel_msg.angular.z= 0
-		self.vel_x = vel_msg.linear.x
-		self.vel_t = vel_msg.angular.z
+		x_sat = 1.5
+		t_sat = 1.5
+		self.vel_x = (vel_msg.linear.x/abs(vel_msg.linear.x))*min(abs(vel_msg.linear.x),x_sat)
+		self.vel_t = (vel_msg.angular.z/abs(vel_msg.angular.z))*min(abs(vel_msg.angular.z),t_sat)
+		vel_msg.linear.x = self.vel_x
+		vel_msg.angular.z = self.vel_t
 		self.pub.publish(vel_msg)
+
 
 	def __init__(self,param_file,name):
 		self.name  			= name
@@ -118,18 +122,28 @@ class Robot:
 		self.sub_odom 		= rospy.Subscriber(self.name+"/odom", Odometry, self.odometryCb)
 		self.odom_msg 		= Odometry()
 		self.pose_task 		= Pose2D()
-		self.updated 		= False
+		# self.updated 		= False
+		self.updated_odom	= False
+		self.updated_scan	= False
 		self.dist_tol 		= 0.2
 		self.vel_x 			= 0
 		self.vel_t 			= 0
-		# self.sub_scan = rospy.Subscriber(self.name+"/scan", Pose2D	, self.pose2dCb)
+		self.norm 			= 100
+		self.sub_scan = rospy.Subscriber(self.name+"/scan", LaserScan, self.laserCb)
 		self.pub 			= rospy.Publisher(self.name+"/cmd_vel", Twist, queue_size=10)
 
 def clockCb(msg):
 	start = True
 	task_handler.run()
+	time = msg.clock.secs
 	for robot in list_robots:
-		robot.loop(msg.clock.secs)
+		try:
+			robot.loop(time)
+		except:
+			print robot.name + " could not go through"
+	if (time-old_time) % 5  == 0 and time != old_time:
+		global old_time
+		old_time = time
 
 def find_robots():
 	list_topics = rospy.get_published_topics()
@@ -142,10 +156,12 @@ def find_robots():
 
 class Task:
 
-	def __init__(self,task_data,task_type,task_id):
-		self.task_data = task_data
-		self.task_type = task_type
-		self.task_id = task_id
+	def __init__(self,task_data,task_type,task_id,task_done):
+		self.task_data 	= task_data
+		self.task_type 	= task_type
+		self.task_id 	= task_id
+		self.task_done 	= task_done
+		self.task_robot = []
 
 class Tasks_management:
 
@@ -159,26 +175,35 @@ class Tasks_management:
 		self.other_task_reception 	= rospy.Service('task_node/other', other_task, self.other_task_reception)
 
 	def pos_task_reception(self,req):
-		self.list_waiting_tasks.append(Task(req.task_data,req.task_type,req.task_id))
+		self.list_waiting_tasks.append(Task(req.task_data,req.task_type,req.task_id,req.task_done))
 		# self.updated = True
 
 	def other_task_reception(self,req):
-		self.list_waiting_tasks.append(Task(req.task_data,req.task_type,req.task_id))
+		self.list_waiting_tasks.append(Task(req.task_data,req.task_type,req.task_id,req.task_done))
 		# self.updated = True
 
 	def run(self):
 		# Ask every robot to accept the task
 		self.seeding()
 		# Check every robot on task completion 
-		num_achieved = self.collect()			
+		self.collect()			
 		#
-		self.update(num_achieved)
+		self.update()
+		# print "waiting: ",self.list_waiting_tasks
+		# print "active: ",self.list_active_tasks
+		# print "achieved: ",self.list_achieved_tasks
 		#
 		# learn()
+
 	def update(self):
-		for robot in list_robots:
-
-
+		for task in self.list_achieved_tasks:
+			task_temp = task
+			task_temp.task_robot = []
+			for robot in list_robots:
+				if robot.name != task[0].task_robot:
+					if task[0] in robot.tasks
+					robot.tasks.remove(task[0])
+					print task[0].task_type , " task has been removed"
 	def seeding(self):
 		for task in self.list_waiting_tasks:
 			task_robot_id = []
@@ -195,27 +220,26 @@ class Tasks_management:
 			self.list_waiting_tasks.remove(task)	
 
 	def collect(self):
-		num_achieved = 0
 		for task in self.list_active_tasks:
+			remember_task = 0
 			for robot in list_robots:
-				if task in robot.completed_tasks:
-					num_achieved += 1 
+				if task[0] in robot.completed_tasks:
+					remember_task = task
 					# Identify which robot achieved the task
-					achieved_task = task.append(robot)
-					self.list_achieved_tasks.append(achieved_task)
-					print task[0].task_type , " has been completed by: ",robot
-					# Remove task from list_active_tasks
-					# task.remove()
-					self.list_waiting_tasks.remove(task)	
-					break
-		return num_achieved
+					task[0].task_robot = robot.name
+					self.list_achieved_tasks.append(task)
+					print task[0].task_type , " has been completed by: ",robot.name
+			# Remove task from list_active_tasks
+			if remember_task in self.list_active_tasks:
+				self.list_active_tasks.remove(remember_task)	
 
 if __name__ == '__main__':
 	# Find Robots available in the scene
 	list_names 	= find_robots()
 	list_robots = []
 	task_handler = Tasks_management()
-	global list_robots , task_handler
+	old_time = 0
+	global list_robots , task_handler , old_time
 	rospy.init_node("MAS_node", anonymous=True) #make node 
 	# Subscribe to Gazebo's clock
 	sub_clock 	= rospy.Subscriber("/clock", Clock, clockCb)

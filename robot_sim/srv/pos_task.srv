@@ -1,4 +1,4 @@
 geometry_msgs/Pose2D task_data
 string task_type
 int64 task_id
-bool task_success
+bool task_done

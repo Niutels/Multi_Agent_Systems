@@ -12,9 +12,9 @@ def send_task(task_data, task_type):
         task_request = rospy.ServiceProxy('task_node/other', other_task)
     str_task_id = str(uuid.uuid1().int)
     task_id = int(str_task_id[:15])
-    task_success = False
-    print task_data,task_type,task_id,task_success
-    task_response = task_request(task_data,task_type,task_id,task_success)
+    task_done = False
+    print task_data,task_type,task_id,task_done
+    task_response = task_request(task_data,task_type,task_id,task_done)
 
 if __name__ == "__main__":
     # task_type = input("Please provide a task type: [ position / ... ]: ")
@@ -29,7 +29,8 @@ if __name__ == "__main__":
     # else:
     #     print "Please provide a supported data type"
     #     sys.exit(1)
-    task_data = Pose2D(x=1,y=1,theta=1)
+    # task_data = Pose2D(x=10,y=15,theta=1)
+    task_data = Pose2D(x=10,y=5,theta=1)
     task_type = "position"
     send_task(task_data,task_type)
 
