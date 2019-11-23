@@ -43,11 +43,12 @@ class Robot:
 		return valid
 
 	def task_completion(self):
-		print "task completed ! "
-		self.tasks[0].task_done = True
-		self.tasks[0].task_robot = self.name
+		print "task completed by " , self.name , " !"
+		self.tasks[0].task_finishers.append(self.name)
 		self.completed_tasks.append(self.tasks[0])
+		print self.tasks
 		self.tasks.pop(0)
+		print self.tasks
 
 	def loop(self,time):
 		global old_time
@@ -55,32 +56,32 @@ class Robot:
 			if self.tasks[0].task_type == "position":
 				rospy.wait_for_message(self.name+"/odom", Odometry)
 				rospy.wait_for_message(self.name+"/scan", LaserScan)
-				if (time-old_time) % 5  == 0 and time != old_time:
-					print "Time: ",time,"(s)"
-					print "/\n/\nState of " + self.name ,self.name
-					print "Pose: " , "x : ", self.odom_msg.position.x , " | y : " , self.odom_msg.position.y , " | z : " , self.odom_msg.position.z
-					print "Vel:  " , "x : ", self.vel_x , " | theta : ",self.vel_t
-					print "Self-update odom: ",self.updated_odom
-					print "Self-update scan: ",self.updated_scan
-					print "--------------------------"
-					print "Tasks amount: ",len(self.tasks)
-					if len(self.tasks)!=0:
-						print "Target: ","x : ", self.tasks[0].task_data.x," | y : ", self.tasks[0].task_data.y
-						print "Norm: ",self.norm
-						print "Task done: ",self.tasks[0].task_done
-					print "Completed tasks: ", self.completed_tasks
+				# if (time-old_time) % 5  == 0 and time != old_time:
+					# print "Time: ",time,"(s)"
+					# print "/\n/\nState of " + self.name ,self.name
+					# print "Pose: " , "x : ", self.odom_msg.position.x , " | y : " , self.odom_msg.position.y , " | z : " , self.odom_msg.position.z
+					# print "Vel:  " , "x : ", self.vel_x , " | theta : ",self.vel_t
+					# print "Self-update odom: ",self.updated_odom
+					# print "Self-update scan: ",self.updated_scan
+					# print "--------------------------"
+					# print "Tasks amount: ",len(self.tasks)
+					# if len(self.tasks)!=0:
+					# 	print "Target: ","x : ", self.tasks[0].task_data.x," | y : ", self.tasks[0].task_data.y
+					# 	print "Norm: ",self.norm
+					# print "Completed tasks: ", self.completed_tasks
 				try:
 					self.pose_task = self.tasks[0].task_data 
-					self.moving_to_target()
+					self.navigation()
 				except:
-					print "Could not move to target"
+					# print "Could not move to target"
+					l=1
+		else:
+			self.pub.publish(Twist())
 
 	def moving_to_target(self):
 		pose = self.odom_msg
-		scan = self.laser_msg
 		targ = self.pose_task
 		Kp = 0.5
-		vel_msg = Twist()
 		if self.updated_scan and self.updated_odom :
 			self.updated_scan = False
 			self.updated_odom = False
@@ -93,18 +94,38 @@ class Robot:
 			diff_y		= (targ.y-pose.position.y)
 			self.norm 	= sqrt(pow(diff_x,2)+pow(diff_y,2))
 			if self.norm > self.dist_tol:
-				vel_msg.linear.x = Kp*self.norm
-				vel_msg.angular.z = Kp*diff_angle
+				self.vel_x = Kp*self.norm
+				self.vel_t = Kp*diff_angle
 				# print vel_msg
 			else:
-				if self.tasks[0].task_done == False:
-					self.task_completion()
-				vel_msg.linear.x = 0
-				vel_msg.angular.z= 0
-		x_sat = 1.5
-		t_sat = 1.5
-		self.vel_x = (vel_msg.linear.x/abs(vel_msg.linear.x))*min(abs(vel_msg.linear.x),x_sat)
-		self.vel_t = (vel_msg.angular.z/abs(vel_msg.angular.z))*min(abs(vel_msg.angular.z),t_sat)
+				self.task_completion()
+				self.vel_x = 0
+				self.vel_t = 0
+
+	def obstacle_avoidance(self):
+		scan 					= self.laser_msg
+		smallest_distance		= min(scan.ranges)
+		closest_point_index 	= scan.ranges.index(smallest_distance)
+		# if closest_point > smallest_distance:
+		angle_closest_pt	= closest_point_index*scan.angle_increment-scan.angle_min
+		if abs(angle_closest_pt)-pi/2 > 0.1:
+			self.vel_t	 		= self.vel_t+cos(angle_closest_pt)/(1+smallest_distance)
+
+	def saturation(self):
+		x_sat = self.specs["vel"]
+		t_sat = self.specs["vel"] + x_sat
+		# self.vel_x = (self.vel_x/abs(self.vel_x))*min(abs(self.vel_x),x_sat)
+		# self.vel_t = (self.vel_t/abs(self.vel_t))*min(abs(self.vel_t),t_sat)
+
+		# Prioritizing rotation to avoid obstacles
+		self.vel_t = (self.vel_t/abs(self.vel_t))*min(abs(self.vel_t),t_sat)
+		self.vel_x = (self.vel_x/abs(self.vel_x))*min(abs(self.vel_x),x_sat-abs(self.vel_t))
+
+	def navigation(self):
+		self.moving_to_target()
+		self.obstacle_avoidance()
+		self.saturation()
+		vel_msg = Twist()
 		vel_msg.linear.x = self.vel_x
 		vel_msg.angular.z = self.vel_t
 		self.pub.publish(vel_msg)
@@ -156,12 +177,12 @@ def find_robots():
 
 class Task:
 
-	def __init__(self,task_data,task_type,task_id,task_done):
-		self.task_data 	= task_data
-		self.task_type 	= task_type
-		self.task_id 	= task_id
-		self.task_done 	= task_done
-		self.task_robot = []
+	def __init__(self,task_data,task_type,task_id):
+		self.task_data 		= task_data
+		self.task_type 		= task_type
+		self.task_id 		= task_id
+		self.task_finishers	= []
+		self.task_robots 	= []
 
 class Tasks_management:
 
@@ -175,11 +196,11 @@ class Tasks_management:
 		self.other_task_reception 	= rospy.Service('task_node/other', other_task, self.other_task_reception)
 
 	def pos_task_reception(self,req):
-		self.list_waiting_tasks.append(Task(req.task_data,req.task_type,req.task_id,req.task_done))
+		self.list_waiting_tasks.append(Task(req.task_data,req.task_type,req.task_id))
 		# self.updated = True
 
 	def other_task_reception(self,req):
-		self.list_waiting_tasks.append(Task(req.task_data,req.task_type,req.task_id,req.task_done))
+		self.list_waiting_tasks.append(Task(req.task_data,req.task_type,req.task_id))
 		# self.updated = True
 
 	def run(self):
@@ -197,41 +218,38 @@ class Tasks_management:
 
 	def update(self):
 		for task in self.list_achieved_tasks:
-			task_temp = task
-			task_temp.task_robot = []
 			for robot in list_robots:
-				if robot.name != task[0].task_robot:
-					if task[0] in robot.tasks
-					robot.tasks.remove(task[0])
-					print task[0].task_type , " task has been removed"
+				R_task = next((x for x in robot.tasks if x.task_id == task.task_id), False)
+				if R_task != False:
+					print R_task
+					robot.tasks.remove(R_task)
+					print task.task_type , " task has been removed from ",robot.name
+			self.tasks_history.append(task)
+			print task.task_type , " task now tranfered to history"
+			self.list_achieved_tasks.remove(task)
+
 	def seeding(self):
 		for task in self.list_waiting_tasks:
-			task_robot_id = []
 			for robot in list_robots:
 				# Check if the task has been accepted and save which robots did
 				if robot.task_reception(task):
-					task_robot_id.append(robot.name)
-			if len(task_robot_id)!=0:
-				# Save task as first member s.t.: task_robot_id = [ task ,"robot_0" , ... ,"robot_n"]
-				task_robot_id.insert(0,task)
-				self.list_active_tasks.append(task_robot_id)
-				print task.task_type," task has been accepted by: ",task_robot_id[1:] 
-			# Remove task from list_waiting_tasks
-			self.list_waiting_tasks.remove(task)	
+					task.task_robots.append(robot.name)
+			if len(task.task_robots)>0:
+				self.list_active_tasks.append(task)
+				print task.task_type," task has been accepted by: ",task.task_robots 
+				# Remove task from list_waiting_tasks
+				self.list_waiting_tasks.remove(task)	
 
 	def collect(self):
 		for task in self.list_active_tasks:
-			remember_task = 0
 			for robot in list_robots:
-				if task[0] in robot.completed_tasks:
-					remember_task = task
-					# Identify which robot achieved the task
-					task[0].task_robot = robot.name
-					self.list_achieved_tasks.append(task)
-					print task[0].task_type , " has been completed by: ",robot.name
-			# Remove task from list_active_tasks
-			if remember_task in self.list_active_tasks:
-				self.list_active_tasks.remove(remember_task)	
+				if task in robot.completed_tasks:
+					task.task_finishers.append(robot.name)
+					print task.task_type , " has been completed by: ",robot.name
+			if len(task.task_finishers)>0:
+				self.list_achieved_tasks.append(task)
+				# Remove task from list_active_tasks
+				self.list_active_tasks.remove(task)	
 
 if __name__ == '__main__':
 	# Find Robots available in the scene

@@ -1,4 +1,3 @@
 int32 task_data
 string task_type
 int64 task_id
-bool task_done
