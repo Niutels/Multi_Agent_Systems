@@ -10,8 +10,9 @@ from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Twist,Pose2D
 from sensor_msgs.msg import LaserScan
 from rosgraph_msgs.msg import Clock
-from math import atan2,pi,sqrt,pow,cos,sin
+from math import atan2,pi,sqrt,pow,cos,sin,exp
 from robot_sim.srv import pos_task,pos_taskResponse,other_task,other_taskResponse
+import numpy as np
 # global old_time
 # old_time=0
 
@@ -46,9 +47,9 @@ class Robot:
 		print "task completed by " , self.name , " !"
 		self.tasks[0].task_finishers.append(self.name)
 		self.completed_tasks.append(self.tasks[0])
-		print self.tasks
+		# print self.tasks
 		self.tasks.pop(0)
-		print self.tasks
+		# print self.tasks
 
 	def loop(self,time):
 		global old_time
@@ -94,32 +95,29 @@ class Robot:
 			diff_y		= (targ.y-pose.position.y)
 			self.norm 	= sqrt(pow(diff_x,2)+pow(diff_y,2))
 			if self.norm > self.dist_tol:
-				self.vel_x = Kp*self.norm
+				self.vel_x = Kp*diff_x
+				# self.vel_y = Kp*diff_y
 				self.vel_t = Kp*diff_angle
-				# print vel_msg
 			else:
 				self.task_completion()
 				self.vel_x = 0
+				self.vel_y = 0
 				self.vel_t = 0
 
 	def obstacle_avoidance(self):
 		scan 					= self.laser_msg
 		smallest_distance		= min(scan.ranges)
 		closest_point_index 	= scan.ranges.index(smallest_distance)
-		# if closest_point > smallest_distance:
-		angle_closest_pt	= closest_point_index*scan.angle_increment-scan.angle_min
-		if abs(angle_closest_pt)-pi/2 > 0.1:
-			self.vel_t	 		= self.vel_t+cos(angle_closest_pt)/(1+smallest_distance)
+		angle	= closest_point_index*scan.angle_increment-scan.angle_min
+		if (angle<pi/2 or angle>3*pi/2):
+			self.vel_t = self.vel_t+0.5*cos(angle)/smallest_distance
+			self.vel_x = min(self.vel_x,self.vel_x*exp(smallest_distance-4))
 
 	def saturation(self):
 		x_sat = self.specs["vel"]
 		t_sat = self.specs["vel"] + x_sat
-		# self.vel_x = (self.vel_x/abs(self.vel_x))*min(abs(self.vel_x),x_sat)
-		# self.vel_t = (self.vel_t/abs(self.vel_t))*min(abs(self.vel_t),t_sat)
-
-		# Prioritizing rotation to avoid obstacles
-		self.vel_t = (self.vel_t/abs(self.vel_t))*min(abs(self.vel_t),t_sat)
-		self.vel_x = (self.vel_x/abs(self.vel_x))*min(abs(self.vel_x),x_sat-abs(self.vel_t))
+		self.vel_t = np.sign(self.vel_t)*min(abs(self.vel_t),t_sat)
+		self.vel_x = min(self.vel_x,x_sat-min(abs(self.vel_t),x_sat))
 
 	def navigation(self):
 		self.moving_to_target()
@@ -148,6 +146,7 @@ class Robot:
 		self.updated_scan	= False
 		self.dist_tol 		= 0.2
 		self.vel_x 			= 0
+		self.vel_y 			= 0
 		self.vel_t 			= 0
 		self.norm 			= 100
 		self.sub_scan = rospy.Subscriber(self.name+"/scan", LaserScan, self.laserCb)

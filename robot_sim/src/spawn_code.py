@@ -53,10 +53,12 @@ if __name__ == '__main__':
     item_pose.pose.orientation.y = orient[1]
     item_pose.pose.orientation.z = orient[2]
     item_pose.pose.orientation.w = orient[3]
-    # for number in range(0,num+1):
-    #     item_name = "turtlebot3_waffle_pi_{0}".format(number)
-    #     item_pose.pose.position.x += 0.5
     for number in range(0,num+1):
+        # item_name = "turtlebot3_waffle_pi_{0}".format(number)
+        # item_pose.pose.position.x += 0.5
+        # spawn_model(item_name, product_xml, "robot_{0}".format(number), item_pose.pose, "world")
+
+    # for number in range(0,num+1):
         item_name = "turtlebot3_waffle_pi_{0}".format(number)
         item_pose.pose.position.x = float(randint(-10,10))
         item_pose.pose.position.y = float(randint(-10,10))

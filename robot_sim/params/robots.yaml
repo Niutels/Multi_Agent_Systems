@@ -17,7 +17,7 @@ robots:
     
  robot_2:
   specs: 
-    vel: 1.0
+    vel: 0.8
     battery: 1.0
   tools:
     tool_1: true
@@ -33,7 +33,7 @@ robots:
     
  robot_4:
   specs: 
-    vel: 1.0
+    vel: 1.2
     battery: 1.0
   tools:
     tool_1: true
