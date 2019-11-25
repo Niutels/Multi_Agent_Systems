@@ -88,16 +88,18 @@ class Robot:
 			self.updated_odom = False
 			rpy 		= getrpy(pose.orientation)
 			yaw 		= rpy[2]
-			angle_worldtotask = atan2((targ.y-pose.position.y),(targ.x-pose.position.x))
-			# print "original diff_angle   :" , angle_worldtotask-yaw
-			diff_angle 	= (angle_worldtotask-yaw)
-			diff_x		= (targ.x-pose.position.x)
-			diff_y		= (targ.y-pose.position.y)
+			X_r = pose.position.x
+			Y_r = pose.position.y
+			T_r = yaw
+			X_t = targ.x
+			Y_t = targ.y
+			diff_x = (X_t-X_r)*cos(yaw)+(Y_t-Y_r)*sin(yaw)
+			diff_y = (Y_t-Y_r)*cos(yaw)-(X_t-X_r)*sin(yaw)
+			diff_angle = atan2(diff_y,diff_x)
 			self.norm 	= sqrt(pow(diff_x,2)+pow(diff_y,2))
 			if self.norm > self.dist_tol:
-				self.vel_x = Kp*diff_x
-				# self.vel_y = Kp*diff_y
-				self.vel_t = Kp*diff_angle
+				self.vel_x = Kp*diff_x + Kp*diff_y
+				self.vel_t = Kp*diff_angle 
 			else:
 				self.task_completion()
 				self.vel_x = 0
@@ -109,15 +111,16 @@ class Robot:
 		smallest_distance		= min(scan.ranges)
 		closest_point_index 	= scan.ranges.index(smallest_distance)
 		angle	= closest_point_index*scan.angle_increment-scan.angle_min
-		if (angle<pi/2 or angle>3*pi/2):
-			self.vel_t = self.vel_t+0.5*cos(angle)/smallest_distance
-			self.vel_x = min(self.vel_x,self.vel_x*exp(smallest_distance-4))
+		Radius = 0.5
+		if (angle<pi/2 or angle>3*pi/2) and not (smallest_distance==float("inf") or smallest_distance== float("-inf")):
+			self.vel_t = self.vel_t*((smallest_distance/(0.3+smallest_distance)))+cos(angle)*Radius/(smallest_distance*sin(angle)-Radius)
+			self.vel_x = self.vel_x*exp(10*(Radius/(smallest_distance*sin(angle)-Radius)))
 
 	def saturation(self):
 		x_sat = self.specs["vel"]
-		t_sat = self.specs["vel"] + x_sat
+		t_sat = self.specs["vel"]
 		self.vel_t = np.sign(self.vel_t)*min(abs(self.vel_t),t_sat)
-		self.vel_x = min(self.vel_x,x_sat-min(abs(self.vel_t),x_sat))
+		self.vel_x = np.sign(self.vel_x)*min(abs(self.vel_x),x_sat)
 
 	def navigation(self):
 		self.moving_to_target()
@@ -220,7 +223,7 @@ class Tasks_management:
 			for robot in list_robots:
 				R_task = next((x for x in robot.tasks if x.task_id == task.task_id), False)
 				if R_task != False:
-					print R_task
+					# print R_task
 					robot.tasks.remove(R_task)
 					print task.task_type , " task has been removed from ",robot.name
 			self.tasks_history.append(task)
