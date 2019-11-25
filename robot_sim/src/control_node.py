@@ -112,6 +112,7 @@ class Robot:
 		closest_point_index 	= scan.ranges.index(smallest_distance)
 		angle	= closest_point_index*scan.angle_increment-scan.angle_min
 		Radius = 0.5
+		
 		if (angle<pi/2 or angle>3*pi/2) and not (smallest_distance==float("inf") or smallest_distance== float("-inf")):
 			self.vel_t = self.vel_t*((smallest_distance/(0.3+smallest_distance)))+cos(angle)*Radius/(smallest_distance*sin(angle)-Radius)
 			self.vel_x = self.vel_x*exp(10*(Radius/(smallest_distance*sin(angle)-Radius)))
