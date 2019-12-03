@@ -13,6 +13,7 @@ from rosgraph_msgs.msg import Clock
 from math import atan2,pi,sqrt,pow,cos,sin,exp
 from robot_sim.srv import pos_task,pos_taskResponse,other_task,other_taskResponse
 import numpy as np
+import time as t_
 # global old_time
 # old_time=0
 
@@ -55,8 +56,8 @@ class Robot:
 		global old_time
 		if len(self.tasks)!=0:
 			if self.tasks[0].task_type == "position":
-				rospy.wait_for_message(self.name+"/odom", Odometry)
-				rospy.wait_for_message(self.name+"/scan", LaserScan)
+				# rospy.wait_for_message(self.name+"/odom", Odometry)
+				# rospy.wait_for_message(self.name+"/scan", LaserScan)
 				# if (time-old_time) % 5  == 0 and time != old_time:
 					# print "Time: ",time,"(s)"
 					# print "/\n/\nState of " + self.name ,self.name
@@ -74,8 +75,8 @@ class Robot:
 					self.pose_task = self.tasks[0].task_data 
 					self.navigation()
 				except:
-					# print "Could not move to target"
-					l=1
+					print "Could not move to target"
+					# l=1
 		else:
 			self.pub.publish(Twist())
 
@@ -98,7 +99,7 @@ class Robot:
 			diff_angle = atan2(diff_y,diff_x)
 			self.norm 	= sqrt(pow(diff_x,2)+pow(diff_y,2))
 			if self.norm > self.dist_tol:
-				self.vel_x = Kp*diff_x + Kp*diff_y
+				self.vel_x = Kp*diff_x# + Kp*diff_y
 				self.vel_t = Kp*diff_angle 
 			else:
 				self.task_completion()
@@ -112,10 +113,13 @@ class Robot:
 		closest_point_index 	= scan.ranges.index(smallest_distance)
 		angle	= closest_point_index*scan.angle_increment-scan.angle_min
 		Radius = 0.5
-		
+
 		if (angle<pi/2 or angle>3*pi/2) and not (smallest_distance==float("inf") or smallest_distance== float("-inf")):
 			self.vel_t = self.vel_t*((smallest_distance/(0.3+smallest_distance)))+cos(angle)*Radius/(smallest_distance*sin(angle)-Radius)
-			self.vel_x = self.vel_x*exp(10*(Radius/(smallest_distance*sin(angle)-Radius)))
+			self.vel_x = self.vel_x*smallest_distance*exp(20*(Radius/(smallest_distance*sin(angle)-Radius)))
+		if (angle>pi/2 and angle<3*pi/2) and smallest_distance<Radius:
+			self.vel_x = max(self.vel_x,0)
+			print self.vel_x
 
 	def saturation(self):
 		x_sat = self.specs["vel"]
@@ -157,6 +161,7 @@ class Robot:
 		self.pub 			= rospy.Publisher(self.name+"/cmd_vel", Twist, queue_size=10)
 
 def clockCb(msg):
+	t0 = t_.time()
 	start = True
 	task_handler.run()
 	time = msg.clock.secs
@@ -168,6 +173,9 @@ def clockCb(msg):
 	if (time-old_time) % 5  == 0 and time != old_time:
 		global old_time
 		old_time = time
+	t1 = t_.time()
+	total = t1-t0
+	print "elapsed time: ",total
 
 def find_robots():
 	list_topics = rospy.get_published_topics()
