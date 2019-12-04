@@ -13,8 +13,14 @@ if __name__ == '__main__':
     rospy.wait_for_service("gazebo/spawn_urdf_model")
     print("Got it.")
     delete_model = rospy.ServiceProxy("gazebo/delete_model", DeleteModel)
+    #This accepts a String modelname and return if it has been possible
+
     # spawn_model = rospy.ServiceProxy("gazebo/spawn_sdf_model", SpawnModel)
     spawn_model = rospy.ServiceProxy("gazebo/spawn_urdf_model", SpawnModel)
+    #This service accepts String(model_name)/String(model_xml)/Sting(robot_namespace-The one that says which is the name of the robot)/Pose InitialPose/String ref_frame
+    #And returns bool success and string status_message 
+
+
     # user_input = sys.argv
     init_pose = rospy.get_param('~init_pose').split(",")
     num = int(rospy.get_param('~additional_robots'))
@@ -28,6 +34,7 @@ if __name__ == '__main__':
     # my_file = os.path.join(THIS_FOLDER, 'myfile.txt')
     # with open(os.environ.get('GAZEBO_MODEL_PATH')+"/turtlebot3_waffle_pi/model.sdf", "r") as f:
     with open(os.environ.get('URDF_PATH')+"/turtlebot3_waffle_pi.xml", "r") as f:
+        #this goes over the specifications of each robot
         product_xml = f.read()
 
     orient = tf.transformations.quaternion_from_euler(0,0,0)
