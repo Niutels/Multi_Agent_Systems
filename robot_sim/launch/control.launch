@@ -3,3 +3,6 @@
   </node>
   <rosparam command="load" file="$(find robot_sim)/params/robots.yaml" />
 </launch>
+
+<!--name can be the name of the node that differs of the name of the executabe -->
+<!--difference, arg is a variable inside the launch file/ param is a parameter to the node-->

@@ -45,7 +45,7 @@ if __name__ == '__main__':
         # delete_model(item_name)
 
     print("Spawning model:%s", "turtlebot3_waffle_pi")
-    item_pose   =  PoseStamped()# Pose(Point(x=bin_x, y=bin_y,    z=2),   orient)
+    item_pose  =  PoseStamped()# Pose(Point(x=bin_x, y=bin_y,    z=2),   orient)
     # item_pose.pose.position.x = float(init_pose[0])-0.5
     # item_pose.pose.position.y = float(init_pose[1])
     item_pose.pose.position.z = float(init_pose[2])
