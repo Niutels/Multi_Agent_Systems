@@ -46,7 +46,7 @@ if __name__ == '__main__':
         try:
             delete_model(item_name)    
         except:
-            print "what happened ?"
+            print("what happened ?")
 
         # print("Deleting model:%s", item_name)
         # delete_model(item_name)
@@ -69,6 +69,6 @@ if __name__ == '__main__':
         item_name = "turtlebot3_waffle_pi_{0}".format(number)
         item_pose.pose.position.x = float(randint(-10,10))
         item_pose.pose.position.y = float(randint(-10,10))
-        spawn_model(item_name, product_xml, "robot_{0}".format(number), item_pose.pose, "world")
+        spawn_model(item_name, product_xml, "turtlebot3_waffle_pi_{0}".format(number), item_pose.pose, "world")
 
 # args="-urdf -model turtlebot3_$(arg model) -x $(arg x_pos) -y $(arg y_pos2) -z $(arg z_pos) -param robot_description"

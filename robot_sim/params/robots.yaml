@@ -1,5 +1,5 @@
 robots:
- robot_0:
+ turtlebot3_waffle_pi_0:
   specs: 
     vel: .4
     battery: 1.0
@@ -7,7 +7,7 @@ robots:
     tool_1: true
     tool_2: false
     
- robot_1:
+ turtlebot3_waffle_pi_1:
   specs: 
     vel: .6
     battery: 1.0
@@ -15,7 +15,7 @@ robots:
     tool_1: true
     tool_2: false
     
- robot_2:
+ turtlebot3_waffle_pi_2:
   specs: 
     vel: 0.8
     battery: 1.0
@@ -23,7 +23,7 @@ robots:
     tool_1: true
     tool_2: false
     
- robot_3:
+ turtlebot3_waffle_pi_3:
   specs: 
     vel: 1.0
     battery: 1.0
@@ -31,7 +31,7 @@ robots:
     tool_1: true
     tool_2: false
     
- robot_4:
+ turtlebot3_waffle_pi_4:
   specs: 
     vel: 1.2
     battery: 1.0

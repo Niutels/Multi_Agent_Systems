@@ -14,8 +14,10 @@ from math import atan2,pi,sqrt,pow,cos,sin,exp
 from robot_sim.srv import pos_task,pos_taskResponse,other_task,other_taskResponse
 import numpy as np
 import time as t_
-# global old_time
-# old_time=0
+
+import math
+import random
+
 
 def getrpy(q):
 	return tf.transformations.euler_from_quaternion([q.x,q.y,q.z,q.w])
@@ -75,28 +77,40 @@ class Robot:
 					self.pose_task = self.tasks[0].task_data 
 					self.navigation()
 				except:
-					print "Could not move to target"
+					a=1
+					# print "Could not move to target"
 					# l=1
 		else:
 			self.pub.publish(Twist())
 
+	def delta_robot_task(self,pose,targ):
+		rpy 		= getrpy(pose.orientation)
+		yaw 		= rpy[2]
+		X_r = pose.position.x
+		Y_r = pose.position.y
+		T_r = yaw
+		X_t = targ.x
+		Y_t = targ.y
+		diff_x = (X_t-X_r)*cos(yaw)+(Y_t-Y_r)*sin(yaw)
+		diff_y = (Y_t-Y_r)*cos(yaw)-(X_t-X_r)*sin(yaw)
+		diff_angle = atan2(diff_y,diff_x)
+		return diff_x,diff_y,diff_angle
+
+	def norm_task_task(self,targ1,targ2):
+		X_t1 = targ1.x
+		Y_t1 = targ1.y
+		X_t2 = targ2.x
+		Y_t2 = targ2.y
+		return sqrt(pow(X_t1-X_t2,2)+pow(Y_t1-Y_t2,2))
+
 	def moving_to_target(self):
-		pose = self.odom_msg
-		targ = self.pose_task
+		# pose = self.odom_msg
+		# targ = self.pose_task
 		Kp = 0.5
-		if self.updated_scan and self.updated_odom :
+		if self.updated_scan and self.updated_odom:
 			self.updated_scan = False
 			self.updated_odom = False
-			rpy 		= getrpy(pose.orientation)
-			yaw 		= rpy[2]
-			X_r = pose.position.x
-			Y_r = pose.position.y
-			T_r = yaw
-			X_t = targ.x
-			Y_t = targ.y
-			diff_x = (X_t-X_r)*cos(yaw)+(Y_t-Y_r)*sin(yaw)
-			diff_y = (Y_t-Y_r)*cos(yaw)-(X_t-X_r)*sin(yaw)
-			diff_angle = atan2(diff_y,diff_x)
+			diff_x,diff_y,diff_angle = self.delta_robot_task(self.odom_msg,self.pose_task)
 			self.norm 	= sqrt(pow(diff_x,2)+pow(diff_y,2))
 			if self.norm > self.dist_tol:
 				self.vel_x = Kp*diff_x# + Kp*diff_y
@@ -119,7 +133,7 @@ class Robot:
 			self.vel_x = self.vel_x*smallest_distance*exp(20*(Radius/(smallest_distance*sin(angle)-Radius)))
 		if (angle>pi/2 and angle<3*pi/2) and smallest_distance<Radius:
 			self.vel_x = max(self.vel_x,0)
-			print self.vel_x
+			# print self.vel_x
 
 	def saturation(self):
 		x_sat = self.specs["vel"]
@@ -136,11 +150,118 @@ class Robot:
 		vel_msg.angular.z = self.vel_t
 		self.pub.publish(vel_msg)
 
+	def map_robot_to_tasks(self):
+		i = 0
+		temp_array = []
+		for task in self.tasks:
+			diff_x,diff_y,diff_angle 		= self.delta_robot_task(self.odom_msg,task.task_data)
+			norm 							= sqrt(pow(diff_x,2)+pow(diff_y,2))
+			temp_array.append(norm)
+			i += 1
+		temp_array.append(10e9)
+		temp_array.append(0)
+		self.tasks_map.append(temp_array)
+
+	def map_tasks_to_tasks(self):
+		i = 0 
+		j = 0
+		passed = []
+		l_T = len(self.tasks)
+		for task1 in self.tasks:
+			passed.append(task1)
+			temp_array = []
+			for task2 in self.tasks:
+				if task2 not in passed:
+					temp_array.append(self.norm_task_task(task1.task_data ,task2.task_data ))
+				j += 1
+			if i < l_T:
+				temp_array.append(0)
+			i += 1
+			temp_array.append(10e9)
+			self.tasks_map.append(temp_array)
+
+	def map(self):
+		self.sample_size = len(self.tasks)+1
+		list_distances 	= np.array([[self.odom_msg.position.x,self.odom_msg.position.y]])
+		for task in self.tasks:
+			# print list_distances
+			# print task.task_data
+			list_distances 	= np.vstack([list_distances,np.array([task.task_data.x,task.task_data.y])])
+		self.tasks_map 	= np.sqrt((np.square(list_distances[:, np.newaxis] - list_distances).sum(axis=2)))
+
+	def initial_solution(self):
+		task = 0
+		result = [task]
+		tasks_to_visit = list(range(len(self.tasks_map)))
+		tasks_to_visit.remove(task)
+		while tasks_to_visit:
+			nearest_task = min([(self.tasks_map[task][j], j) for j in tasks_to_visit], key=lambda x: x[0])
+			task = nearest_task[1]
+			tasks_to_visit.remove(task)
+			result.append(task)
+		self.curr_solution = result
+
+	def weight(self, sol):
+		return sum([self.tasks_map[i, j] for i, j in zip(sol, sol[1:] + [sol[0]])])
+
+	def acceptance_probability(self, candidate_weight):
+		return math.exp(-abs(candidate_weight - self.curr_weight) / self.temp)
+
+	def accept(self, candidate):
+		candidate_weight = self.weight(candidate)
+		if candidate_weight < self.curr_weight:
+			self.curr_weight = candidate_weight
+			self.curr_solution = candidate
+			if candidate_weight < self.min_weight:
+				self.min_weight = candidate_weight
+				self.best_solution = candidate
+		else:
+			if random.random() < self.acceptance_probability(candidate_weight):
+				self.curr_weight = candidate_weight
+				self.curr_solution = candidate
+
+	def anneal(self):
+		while self.temp >= self.stopping_temp and self.iteration < self.stopping_iter:
+			candidate = list(self.curr_solution)
+			l = random.randint(2, self.sample_size - 1)
+			i = random.randint(0, self.sample_size - l)
+			candidate[i: (i + l)] = reversed(candidate[i: (i + l)])
+			self.accept(candidate)
+			self.temp *= self.alpha
+			self.iteration += 1
+			self.weight_list.append(self.curr_weight)
+
+	def update_tasks_map(self):
+		# print self.list_active_tasks
+		if len(self.tasks)>0:
+			self.tasks_map = []
+			# print "Creating task map"
+			self.map()
+			# print "Initial nearest neighbours solution"
+			self.initial_solution()
+			self.iteration = 1
+			self.best_solution = self.curr_solution
+			# print "Setting initial weights"
+			self.curr_weight = self.weight(self.curr_solution)
+			self.initial_weight = self.curr_weight
+			self.min_weight = self.curr_weight
+			self.weight_list = [self.curr_weight]
+			# print "Current solution: \n" , self.curr_solution
+			# print "Running simulated annealing"
+			self.anneal()
+			# print "Latest solution: \n",self.curr_solution
+			self.curr_solution.remove(0)
+			self.curr_solution = [x - 1 for x in self.curr_solution]
+			# print self.curr_solution
+			# print self.tasks
+			self.tasks = [self.tasks[i] for i in self.curr_solution]
 
 	def __init__(self,param_file,name):
 		self.name  			= name
 		self.specs 			= param_file["specs"]
 		self.tools 			= param_file["tools"]
+		self.tasks_map 		= []
+		self.task_pass 		= []
 		self.tasks 			= []
 		self.completed_tasks= []
 		print self.name
@@ -157,33 +278,54 @@ class Robot:
 		self.vel_y 			= 0
 		self.vel_t 			= 0
 		self.norm 			= 100
-		self.sub_scan = rospy.Subscriber(self.name+"/scan", LaserScan, self.laserCb)
+		self.sub_scan 		= rospy.Subscriber(self.name+"/scan", LaserScan, self.laserCb)
 		self.pub 			= rospy.Publisher(self.name+"/cmd_vel", Twist, queue_size=10)
+		self.temp = 1000
+		self.alpha = 10e-4
+		self.stopping_temp = 10e-50
+		self.stopping_iter = 10e5
+
 
 def clockCb(msg):
 	t0 = t_.time()
 	start = True
 	task_handler.run()
 	time = msg.clock.secs
+	global old_time
+
 	for robot in list_robots:
 		try:
 			robot.loop(time)
 		except:
-			print robot.name + " could not go through"
+			a=1
+			# print robot.name + " could not go through"
 	if (time-old_time) % 5  == 0 and time != old_time:
-		global old_time
+		task_handler.status()
 		old_time = time
+		for robot in list_robots:
+			try:
+				robot.update_tasks_map()
+			except:
+				a=1
+				# print robot.name + " could not do task allocation"
 	t1 = t_.time()
 	total = t1-t0
-	print "elapsed time: ",total
+	# print "elapsed time: ",total
 
 def find_robots():
 	list_topics = rospy.get_published_topics()
 	list_robots = []
 	for topic_i in list_topics:
 		topic = topic_i[0].split("/")
-		if (topic[1])[0:5] == "robot" and (topic[1] not in list_robots):
+		# print len("turtlebot3_waffle_pi_")
+		# print topic[1][0:20]
+		# print ((topic[1])[0:20] == "turtlebot3_waffle_pi")
+		# if (topic[1])[0:20] == "turtle" and (topic[1] not in list_robots):
+		if (topic[1])[0:20] == "turtlebot3_waffle_pi" and (topic[1] not in list_robots):
+			# print "1"
 			list_robots.append(topic_i[0].split("/")[1])
+			# print topic_i[0].split("/")[1]
+			# print list_robots
 	return list_robots
 
 class Task:
@@ -205,6 +347,10 @@ class Tasks_management:
 		self.updated 				= False
 		self.pos_task_reception 	= rospy.Service('task_node/pos', pos_task, self.pos_task_reception)
 		self.other_task_reception 	= rospy.Service('task_node/other', other_task, self.other_task_reception)
+
+	def status(self):
+		print "Number of tasks achieved: ", len(self.tasks_history)
+		print "Number of tasks active: ", len(self.list_active_tasks)
 
 	def pos_task_reception(self,req):
 		self.list_waiting_tasks.append(Task(req.task_data,req.task_type,req.task_id))
@@ -263,20 +409,21 @@ class Tasks_management:
 				self.list_active_tasks.remove(task)	
 
 if __name__ == '__main__':
+	global list_robots , task_handler , old_time
 	# Find Robots available in the scene
 	list_names 	= find_robots()
 	list_robots = []
 	task_handler = Tasks_management()
 	old_time = 0
-	global list_robots , task_handler , old_time
 	rospy.init_node("MAS_node", anonymous=True) #make node 
 	# Subscribe to Gazebo's clock
 	sub_clock 	= rospy.Subscriber("/clock", Clock, clockCb)
 	# Access yaml parameters file
 	robots_params = rospy.get_param('robots')
+	model_name = 'turtlebot3_waffle_pi_'
 	j = 0
 	while True:
-		robot_name = "robot_"+str(j)
+		robot_name = model_name+str(j)
 		if robot_name in list_names:
 			# Create a Robot object for each robot found in the scene, put them in a list
 			list_robots.append(Robot(robots_params[robot_name],robot_name))
