@@ -88,6 +88,16 @@ class XYPlanner:
 		for es_node in ExploredSet:
 			if abs(current_node.x-es_node.x) < 1e-5 and abs(current_node.y-es_node.y) < 1e-5:
 				ExploredSet.remove(es_node)
+
+	def ReproducePath(self,current_node,OpenSet):
+		optimal_path = []
+		optimal_path.append(current_node)
+		while current_node.parent != '00000':
+			for os_node in OpenSet:
+				if current_node.parent == os_node.key:
+					optimal_path.append(os_node)
+					current_node = os_node
+
 			
 
 
@@ -137,6 +147,8 @@ def DoAstar():
 		if planner.goalReached(current_node,goal_node) == 'true':
 			print('FOUND A PATH')
 			OpenSet.pop(0)
+
+
 			break
 		else:		
 			OpenSet.pop(0)
