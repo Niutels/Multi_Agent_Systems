@@ -6,11 +6,11 @@ import math
 
 class XYNode:
 	g_score = 0
-	f_score = 40
+	f_score = 1000
 	parent = '00000'
 	key = '00000'
-	x = 1
-	y = 1
+	x = 0
+	y = 0
 
 class XYPlanner:
 
@@ -69,8 +69,6 @@ class XYPlanner:
 		plt.xlabel('x pos')
 		plt.ylabel('y pos')
 		plt.show()
-		#print(xcoords)
-		#print(ycoords)
 
 	def CompareClosedSet(self,ns_node,ClosedSet):
 		for cs_node in ClosedSet:
@@ -89,14 +87,27 @@ class XYPlanner:
 			if abs(current_node.x-es_node.x) < 1e-5 and abs(current_node.y-es_node.y) < 1e-5:
 				ExploredSet.remove(es_node)
 
+	def CompareClosedSetKey(self,current_node,ClosedSet):
+		for cs_node in ClosedSet:
+			if current_node.parent == cs_node.key:
+				return cs_node
+
 	def ReproducePath(self,current_node,OpenSet):
+		planner = XYPlanner()
 		optimal_path = []
+		op_xcoords = []
+		op_ycoords = []
 		optimal_path.append(current_node)
 		while current_node.parent != '00000':
-			for os_node in OpenSet:
-				if current_node.parent == os_node.key:
-					optimal_path.append(os_node)
-					current_node = os_node
+			opt_node = planner.CompareClosedSetKey(current_node,OpenSet)
+			optimal_path.append(opt_node)
+			current_node = opt_node
+
+		for opt_node in optimal_path:
+			op_xcoords.append(opt_node.x)
+			op_ycoords.append(opt_node.y)
+
+		return optimal_path, op_xcoords, op_ycoords
 
 			
 
@@ -113,8 +124,8 @@ def DoAstar():
 	test_node1 = XYNode()
 	test_node2 = XYNode()
 	planner = XYPlanner()
-	begin_node = planner.NodeInitialize(begin_node,1,1)
-	goal_node = planner.NodeInitialize(goal_node,12.5,21)
+	begin_node = planner.NodeInitialize(begin_node,-5,11)
+	goal_node = planner.NodeInitialize(goal_node,2,3)
 	test_node1 = planner.NodeInitialize(test_node1,3.5,4.5)
 	test_node2 = planner.NodeInitialize(test_node2,3.5,4)
 	test_node1.g_score = 100
@@ -146,7 +157,15 @@ def DoAstar():
 
 		if planner.goalReached(current_node,goal_node) == 'true':
 			print('FOUND A PATH')
+
 			OpenSet.pop(0)
+			optimal_path, op_xcoords, op_ycoords = planner.ReproducePath(current_node,ClosedSet)
+
+			plt.plot(op_xcoords,op_ycoords,'*')
+			plt.title('Optimal Path')
+			plt.xlabel('x')
+			plt.ylabel('y')
+			plt.show()
 
 
 			break
