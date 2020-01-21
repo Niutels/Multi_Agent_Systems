@@ -37,8 +37,8 @@ class XYPlanner:
 	def GetNeighbors(self,current):
 		x_val = current.x
 		y_val = current.y
-		df = 0.5
-		max_radius = 2
+		df = 0.1
+		max_radius = 0.5
 		neighbor_list = []
 
 		for i in np.arange(current.x - max_radius,current.x + max_radius+df,df):
@@ -109,6 +109,18 @@ class XYPlanner:
 
 		return optimal_path, op_xcoords, op_ycoords
 
+	def Obstacles(self):
+		obstacle_list = [[1,1],[2,2],[3,3]]
+		return obstacle_list
+
+	def CompareObstacleSet(self,obstacle_list,neighbor):
+		for ob in obstacle_list:
+			ob_x = ob[0]
+			ob_y = ob[1]
+			if math.sqrt((ob_x-neighbor.x)**2+(ob_y-neighbor.y)**2) < 1:
+				neighbor.f_score = 1000
+		return neighbor
+
 			
 
 
@@ -124,8 +136,8 @@ def DoAstar():
 	test_node1 = XYNode()
 	test_node2 = XYNode()
 	planner = XYPlanner()
-	begin_node = planner.NodeInitialize(begin_node,-5.5,-13.5)
-	goal_node = planner.NodeInitialize(goal_node,2,3)
+	begin_node = planner.NodeInitialize(begin_node,0,0)
+	goal_node = planner.NodeInitialize(goal_node,6,6)
 	test_node1 = planner.NodeInitialize(test_node1,3.5,4.5)
 	
 	OpenSet.append(begin_node)
@@ -134,6 +146,9 @@ def DoAstar():
 	ExploredSet.append(test_node1)
 	
 	ClosedSet.append(test_node1)
+
+	obstacle_list = planner.Obstacles()
+	#print('obstacles: %d' %(obstacle_list))
 
 
 
@@ -176,10 +191,12 @@ def DoAstar():
 							es_node.parent = current_node.key
 							es_node.g_score = tentative_gscore
 							es_node.f_score = tentative_gscore + planner.heuristic_cost(ns_node,goal_node)
+							es_node = planner.CompareObstacleSet(obstacle_list,es_node)
 									
 					else:
 						ns_node.g_score = current_node.g_score + planner.g_score(current_node,ns_node)
 						ns_node.f_score = ns_node.g_score + planner.heuristic_cost(ns_node,goal_node)
+						ns_node = planner.CompareObstacleSet(obstacle_list,ns_node)
 						OpenSet.append(ns_node)
 						ExploredSet.append(ns_node)
 
