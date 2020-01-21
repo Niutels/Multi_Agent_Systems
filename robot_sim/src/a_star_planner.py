@@ -124,26 +124,17 @@ def DoAstar():
 	test_node1 = XYNode()
 	test_node2 = XYNode()
 	planner = XYPlanner()
-	begin_node = planner.NodeInitialize(begin_node,-5,11)
+	begin_node = planner.NodeInitialize(begin_node,-5.5,-13.5)
 	goal_node = planner.NodeInitialize(goal_node,2,3)
 	test_node1 = planner.NodeInitialize(test_node1,3.5,4.5)
-	test_node2 = planner.NodeInitialize(test_node2,3.5,4)
-	test_node1.g_score = 100
-	test_node1.f_score = 200
-	test_node1.parent = 'blah blah'
-	test_node2.g_score = 400
-	test_node2.f_score = 300
-
-
+	
 	OpenSet.append(begin_node)
-	#OpenSet.append(test_node1)
+
 	ExploredSet.append(begin_node)
 	ExploredSet.append(test_node1)
-	ExploredSet.append(test_node2)
-
-	ClosedSet.append(begin_node)
+	
 	ClosedSet.append(test_node1)
-	ClosedSet.append(test_node2)
+
 
 
 
@@ -151,9 +142,6 @@ def DoAstar():
 
 		OpenSet.sort(key=lambda xy: xy.f_score)
 		current_node = OpenSet[0]
-
-		print('current node: %s' %(current_node.key))
-
 
 		if planner.goalReached(current_node,goal_node) == 'true':
 			print('FOUND A PATH')
@@ -166,7 +154,6 @@ def DoAstar():
 			plt.xlabel('x')
 			plt.ylabel('y')
 			plt.show()
-
 
 			break
 		else:		
