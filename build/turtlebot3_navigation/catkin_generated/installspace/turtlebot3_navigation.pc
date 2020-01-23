@@ -1,0 +1,8 @@
+prefix=/home/hcappel1/Multi_Agent_Systems/install
+
+Name: turtlebot3_navigation
+Description: Description of turtlebot3_navigation
+Version: 1.2.1
+Cflags: 
+Libs: -L/home/hcappel1/Multi_Agent_Systems/install/lib 
+Requires: 

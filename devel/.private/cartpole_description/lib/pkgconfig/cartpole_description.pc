@@ -1,0 +1,8 @@
+prefix=/home/hcappel1/Multi_Agent_Systems/devel/.private/cartpole_description
+
+Name: cartpole_description
+Description: Description of cartpole_description
+Version: 0.0.0
+Cflags: 
+Libs: -L/home/hcappel1/Multi_Agent_Systems/devel/.private/cartpole_description/lib 
+Requires: 

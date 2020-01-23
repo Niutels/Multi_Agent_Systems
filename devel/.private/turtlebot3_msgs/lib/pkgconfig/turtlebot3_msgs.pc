@@ -1,0 +1,8 @@
+prefix=/home/hcappel1/Multi_Agent_Systems/devel/.private/turtlebot3_msgs
+
+Name: turtlebot3_msgs
+Description: Description of turtlebot3_msgs
+Version: 1.0.0
+Cflags: -I/home/hcappel1/Multi_Agent_Systems/devel/.private/turtlebot3_msgs/include
+Libs: -L/home/hcappel1/Multi_Agent_Systems/devel/.private/turtlebot3_msgs/lib 
+Requires: std_msgs message_runtime

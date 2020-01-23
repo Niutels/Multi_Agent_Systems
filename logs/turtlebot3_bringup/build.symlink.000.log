@@ -1,0 +1,4 @@
+Symlinking /home/hcappel1/Multi_Agent_Systems/devel/lib/pkgconfig/turtlebot3_bringup.pc
+Symlinking /home/hcappel1/Multi_Agent_Systems/devel/lib/turtlebot3_bringup/turtlebot3_diagnostics
+Symlinking /home/hcappel1/Multi_Agent_Systems/devel/share/turtlebot3_bringup/cmake/turtlebot3_bringupConfig.cmake
+Symlinking /home/hcappel1/Multi_Agent_Systems/devel/share/turtlebot3_bringup/cmake/turtlebot3_bringupConfig-version.cmake

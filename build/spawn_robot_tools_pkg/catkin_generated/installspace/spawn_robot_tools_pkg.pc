@@ -1,0 +1,8 @@
+prefix=/home/hcappel1/Multi_Agent_Systems/install
+
+Name: spawn_robot_tools_pkg
+Description: Description of spawn_robot_tools_pkg
+Version: 0.0.0
+Cflags: 
+Libs: -L/home/hcappel1/Multi_Agent_Systems/install/lib 
+Requires: 
