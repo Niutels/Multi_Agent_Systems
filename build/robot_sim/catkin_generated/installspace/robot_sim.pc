@@ -5,4 +5,4 @@ Description: Description of robot_sim
 Version: 0.0.0
 Cflags: -I/home/hcappel1/Multi_Agent_Systems/install/include
 Libs: -L/home/hcappel1/Multi_Agent_Systems/install/lib 
-Requires: roscpp gazebo_ros
+Requires: roscpp gazebo_ros message_runtime

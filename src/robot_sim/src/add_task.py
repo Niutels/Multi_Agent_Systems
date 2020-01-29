@@ -15,7 +15,7 @@ def send_task(task_data, task_type):
             task_request = rospy.ServiceProxy('task_node/other', other_task)
         str_task_id = str(uuid.uuid1().int)
         task_id = int(str_task_id[:15])
-        print task_data,task_type,task_id
+        #print task_data,task_type,task_id
         task_response = task_request(task_data,task_type,task_id)
     except:
         print "ahem"
@@ -49,4 +49,4 @@ if __name__ == "__main__":
         task_data = Pose2D(x=randint(-10,10),y=randint(-10,10),theta=0)
         send_task(task_data,task_type)
         time.sleep(6)
-        print('task sending...')
+        #print('task sending...')

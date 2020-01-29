@@ -1,7 +1,10 @@
-import matplotlib
+#!/usr/bin/env python
 import numpy as np
 import matplotlib.pyplot as plt
 import math
+import rospy
+from robot_sim.srv import planner,plannerResponse
+from std_msgs.msg import Float32MultiArray
 
 
 class XYNode:
@@ -29,7 +32,7 @@ class XYPlanner:
 		return heuristic_cost
 
 	def goalReached(self,current,goal):
-		if abs(goal.x-current.x) < 0.1 and abs(goal.y-current.y) < 0.1:
+		if abs(goal.x-current.x) < 0.5 and abs(goal.y-current.y) < 0.5:
 			return 'true'
 		else:
 			return 'false'
@@ -107,7 +110,7 @@ class XYPlanner:
 			op_xcoords.append(opt_node.x)
 			op_ycoords.append(opt_node.y)
 
-		return optimal_path, op_xcoords, op_ycoords
+		return optimal_path
 
 	def Obstacles(self):
 		obstacle_list = [[0.5,0.5],[2,2],[3,3],[5,5]]
@@ -123,12 +126,43 @@ class XYPlanner:
 				neighbor.f_score = 1000
 		return neighbor
 
-	def DoAstar(self,begin_node,goal_node):
+	def PathtoMessage(self,optimal_path):
+		path_coords = []
+		for node in optimal_path:
+			# temp_coord = []
+			# temp_coord.append(node.x)
+			# temp_coord.append(node.y)
+			# path_coords.append(temp_coord)
+			path_coords.append(node.x)
+			path_coords.append(node.y)
+		return path_coords
+
+	def test(self,req):
+		message = req.coords_msg
+		print('function successful!!!')
+		print(message)
+		PlannerResponse.optimal_path = message
+		return plannerResponse
+
+	def DoAstar(self,req):
+		begin_end_coords=req.coords_msg
+		begin_x = begin_end_coords[0]
+		begin_y = begin_end_coords[1]
+		goal_x = begin_end_coords[2]
+		goal_y = begin_end_coords[3]
+
+		print('passed initial a star')
+
+
 		OpenSet = []
 		ClosedSet = []
 		ExploredSet = []
 
+		begin_node = XYNode()
+		goal_node = XYNode()
 		test_node1 = XYNode()
+		begin_node = self.NodeInitialize(begin_node,begin_x,begin_y)
+		goal_node = self.NodeInitialize(goal_node,goal_x,goal_y)
 		test_node1 = self.NodeInitialize(test_node1,3.5,4.5)
 		
 		OpenSet.append(begin_node)
@@ -149,14 +183,23 @@ class XYPlanner:
 			OpenSet.sort(key=lambda xy: xy.f_score)
 			current_node = OpenSet[0]
 
-			if planner.goalReached(current_node,goal_node) == 'true':
+			if self.goalReached(current_node,goal_node) == 'true':
 				print('FOUND A PATH')
 
 				OpenSet.pop(0)
-				optimal_path, op_xcoords, op_ycoords = planner.ReproducePath(current_node,ClosedSet)
-				print('successfully returned path')
+				optimal_path = self.ReproducePath(current_node,ClosedSet)
 
-				return optimal_path, op_xcoords, op_ycoords
+				path_coords = self.PathtoMessage(optimal_path)
+
+				print('path coordinates::')
+				print(path_coords)
+
+
+				# plannerResponse = path_coords
+
+				# req.optimal_path = path_coords
+
+				return plannerResponse(path_coords)
 
 				break
 			else:		
@@ -184,29 +227,25 @@ class XYPlanner:
 						else:
 							ns_node.g_score = current_node.g_score + self.g_score(current_node,ns_node)
 							ns_node.f_score = ns_node.g_score + self.heuristic_cost(ns_node,goal_node)
-							ns_node = self.CompareObstacleSet(obstacle_list,ns_node)
+							#ns_node = self.CompareObstacleSet(obstacle_list,ns_node)
 							OpenSet.append(ns_node)
 							ExploredSet.append(ns_node)
 
 
+def planner_server():
+	a_planner = XYPlanner()
+	rospy.init_node('planner_server')
+	planner_srv = rospy.Service('planner_service', planner, a_planner.DoAstar)
+	rospy.spin()
+
+
+
 if __name__ == '__main__':
-	begin_node = XYNode()
-	goal_node = XYNode()
-	planner = XYPlanner()
+	planner_server()
 
-	begin_node.x = 1
-	begin_node.y = 1
-	goal_node.x = 10
-	goal_node.y = 10
-
-	optimal_path, op_xcoords, op_ycoords = planner.DoAstar(begin_node,goal_node)
-
-	plt.plot(op_xcoords,op_ycoords,'*')
-	plt.plot()
-	plt.title('Optimal Path')
-	plt.xlabel('x')
-	plt.ylabel('y')
-	plt.show()
+	# planner = XYPlanner()
+	# path_coords = planner.DoAstar([[1,1],[10,10]])
+	# print(path_coords)
 
 
 

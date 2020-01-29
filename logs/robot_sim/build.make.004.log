@@ -1,0 +1,25 @@
+[  0%] Built target std_msgs_generate_messages_nodejs
+[  0%] Built target _robot_sim_generate_messages_check_deps_pos_task
+[  0%] Built target _robot_sim_generate_messages_check_deps_planner
+[  0%] Built target _robot_sim_generate_messages_check_deps_other_task
+[  0%] Built target sensor_msgs_generate_messages_nodejs
+[  0%] Built target geometry_msgs_generate_messages_nodejs
+[  0%] Built target sensor_msgs_generate_messages_py
+[  0%] Built target std_msgs_generate_messages_py
+[  0%] Built target sensor_msgs_generate_messages_eus
+[  0%] Built target std_msgs_generate_messages_eus
+[  0%] Built target geometry_msgs_generate_messages_eus
+[  0%] Built target geometry_msgs_generate_messages_py
+[  0%] Built target std_msgs_generate_messages_lisp
+[  0%] Built target sensor_msgs_generate_messages_lisp
+[  0%] Built target geometry_msgs_generate_messages_lisp
+[  0%] Built target std_msgs_generate_messages_cpp
+[  0%] Built target geometry_msgs_generate_messages_cpp
+[  0%] Built target sensor_msgs_generate_messages_cpp
+[ 10%] Built target robot_sim
+[ 31%] Built target robot_sim_generate_messages_py
+[ 47%] Built target robot_sim_generate_messages_nodejs
+[ 63%] Built target robot_sim_generate_messages_lisp
+[ 84%] Built target robot_sim_generate_messages_eus
+[100%] Built target robot_sim_generate_messages_cpp
+[100%] Built target robot_sim_generate_messages

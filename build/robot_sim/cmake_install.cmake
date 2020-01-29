@@ -127,6 +127,7 @@ if(NOT CMAKE_INSTALL_COMPONENT OR "${CMAKE_INSTALL_COMPONENT}" STREQUAL "Unspeci
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/robot_sim/srv" TYPE FILE FILES
     "/home/hcappel1/Multi_Agent_Systems/src/robot_sim/srv/pos_task.srv"
     "/home/hcappel1/Multi_Agent_Systems/src/robot_sim/srv/other_task.srv"
+    "/home/hcappel1/Multi_Agent_Systems/src/robot_sim/srv/planner.srv"
     )
 endif()
 

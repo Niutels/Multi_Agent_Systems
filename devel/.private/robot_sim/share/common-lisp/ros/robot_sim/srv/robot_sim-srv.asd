@@ -7,6 +7,8 @@
   :components ((:file "_package")
     (:file "other_task" :depends-on ("_package_other_task"))
     (:file "_package_other_task" :depends-on ("_package"))
+    (:file "planner" :depends-on ("_package_planner"))
+    (:file "_package_planner" :depends-on ("_package"))
     (:file "pos_task" :depends-on ("_package_pos_task"))
     (:file "_package_pos_task" :depends-on ("_package"))
   ))

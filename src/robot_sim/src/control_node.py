@@ -11,7 +11,8 @@ from geometry_msgs.msg import Twist,Pose2D
 from sensor_msgs.msg import LaserScan
 from rosgraph_msgs.msg import Clock
 from math import atan2,pi,sqrt,pow,cos,sin,exp
-from robot_sim.srv import pos_task,pos_taskResponse,other_task,other_taskResponse
+from robot_sim.srv import pos_task,pos_taskResponse,other_task,other_taskResponse,planner,plannerRequest
+from std_msgs.msg import Float32MultiArray
 import numpy as np
 import time as t_
 
@@ -58,8 +59,17 @@ class Robot:
 
 	def loop(self,time):
 		global old_time
+
 		if len(self.tasks)!=0:
 			if self.tasks[0].task_type == "position":
+
+
+				if self.tasks[0].task_in_progress == 'false':
+					self.pose_task = self.tasks[0].task_data
+					optimal_path = self.GetPath()
+					print('PATH::')
+					print(optimal_path)
+					self.tasks[0].task_in_progress = 'true'
 				# rospy.wait_for_message(self.name+"/odom", Odometry)
 				# rospy.wait_for_message(self.name+"/scan", LaserScan)
 				# if (time-old_time) % 5  == 0 and time != old_time:
@@ -76,8 +86,8 @@ class Robot:
 					# 	print "Norm: ",self.norm
 					# print "Completed tasks: ", self.completed_tasks
 				try:
-					self.pose_task = self.tasks[0].task_data 
-					self.navigation()
+					#self.pose_task = self.tasks[0].task_data
+					self.navigation(optimal_path)
 				except:
 					a=1
 					# print "Could not move to target"
@@ -98,6 +108,33 @@ class Robot:
 		diff_angle = atan2(diff_y,diff_x)
 		return diff_x,diff_y,diff_angle
 
+	#HENRY WORK########
+	def GetTaskInfo(self,pose,targ):
+		rpy 		= getrpy(pose.orientation)
+		X_r = pose.position.x
+		Y_r = pose.position.y
+		X_t = targ.x
+		Y_t = targ.y
+		return X_r, Y_r, X_t, Y_t
+
+	def PlannerService(self,begin_end_coords):
+		rospy.wait_for_service('planner_service')
+		try:
+			PlannerService = rospy.ServiceProxy('planner_service', planner)
+			return_msg = PlannerService(begin_end_coords)
+			return return_msg.optimal_path
+		except rospy.ServiceException, e:
+			print ("Service call failed: %s"%e)
+
+	def GetPath(self):
+		X_r, Y_r, X_t, Y_t = self.GetTaskInfo(self.odom_msg,self.pose_task)
+		begin_end_coords = [X_r,Y_r,X_t,Y_t]
+
+		optimal_path = self.PlannerService(begin_end_coords)
+
+		return optimal_path
+	
+
 	def norm_task_task(self,targ1,targ2):
 		X_t1 = targ1.x
 		Y_t1 = targ1.y
@@ -105,13 +142,17 @@ class Robot:
 		Y_t2 = targ2.y
 		return sqrt(pow(X_t1-X_t2,2)+pow(Y_t1-Y_t2,2))
 
-	def moving_to_target(self):
+	def moving_to_target(self,optimal_path):
 		# pose = self.odom_msg
 		# targ = self.pose_task
+
 		Kp = 0.5
 		if self.updated_scan and self.updated_odom:
 			self.updated_scan = False
 			self.updated_odom = False
+
+			#input help from planner HENRY WORK################
+
 			diff_x,diff_y,diff_angle = self.delta_robot_task(self.odom_msg,self.pose_task)
 			self.norm 	= sqrt(pow(diff_x,2)+pow(diff_y,2))
 			if self.norm > self.dist_tol:
@@ -143,8 +184,8 @@ class Robot:
 		self.vel_t = np.sign(self.vel_t)*min(abs(self.vel_t),t_sat)
 		self.vel_x = np.sign(self.vel_x)*min(abs(self.vel_x),x_sat)
 
-	def navigation(self):
-		self.moving_to_target()
+	def navigation(self,optimal_path): ###############################
+		self.moving_to_target(optimal_path)
 		self.obstacle_avoidance()
 		self.saturation()
 		vel_msg = Twist()
@@ -282,7 +323,7 @@ class Robot:
 		self.norm 			= 100
 		self.sub_scan 		= rospy.Subscriber(self.name+"/scan", LaserScan, self.laserCb)
 		self.pub 			= rospy.Publisher(self.name+"/cmd_vel", Twist, queue_size=10)
-		#self.pub2 			= rospy.Publisher(self.name+"/start_end_coord", array, queue_size=10)
+		#self.pub_pos 		= rospy.Publisher(self.name+"/start_end_coord",Float32MultiArray, queue_size=10)
 		self.temp = 1000
 		self.alpha = 10e-4
 		self.stopping_temp = 10e-50
@@ -295,6 +336,8 @@ def clockCb(msg):
 	task_handler.run()
 	time = msg.clock.secs
 	global old_time
+
+	
 
 	for robot in list_robots:
 		try:
@@ -339,6 +382,8 @@ class Task:
 		self.task_id 		= task_id
 		self.task_finishers	= []
 		self.task_robots 	= []
+		self.task_in_progress = 'false'
+
 
 class Tasks_management:
 
@@ -425,6 +470,9 @@ if __name__ == '__main__':
 	robots_params = rospy.get_param('robots')
 	model_name = 'turtlebot3_waffle_pi_'
 	j = 0
+
+
+
 	while True:
 		robot_name = model_name+str(j)
 		if robot_name in list_names:

@@ -1,0 +1,13 @@
+[31m[1mCMake Error[0m at /home/hcappel1/Multi_Agent_Systems/build/robot_sim/cmake/robot_sim-genmsg.cmake:3 (message):
+  Could not find messages which
+  '/home/hcappel1/Multi_Agent_Systems/src/robot_sim/srv/planner.srv' depends
+  on.  Did you forget to specify generate_messages(DEPENDENCIES ...)?
+
+  Cannot locate message [Float32MultiArray] in package [robot_sim] with paths
+  [['/home/hcappel1/Multi_Agent_Systems/src/robot_sim/msg']]
+[36mCall Stack (most recent call first):[0m
+  /opt/ros/kinetic/share/genmsg/cmake/genmsg-extras.cmake:307 (include)
+  CMakeLists.txt:29 (generate_messages)
+
+
+make: *** [cmake_check_build_system] Error 1

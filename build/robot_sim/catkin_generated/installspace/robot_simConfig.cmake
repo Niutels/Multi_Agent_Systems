@@ -162,7 +162,7 @@ foreach(t ${robot_sim_EXPORTED_TARGETS})
   endif()
 endforeach()
 
-set(depends "roscpp;gazebo_ros")
+set(depends "roscpp;gazebo_ros;message_runtime")
 foreach(depend ${depends})
   string(REPLACE " " ";" depend_list ${depend})
   # the package name of the dependency must be kept in a unique variable so that it is not overwritten in recursive calls

@@ -1,7 +1,7 @@
 # generated from genmsg/cmake/pkg-genmsg.context.in
 
 messages_str = ""
-services_str = "/home/hcappel1/Multi_Agent_Systems/src/robot_sim/srv/pos_task.srv;/home/hcappel1/Multi_Agent_Systems/src/robot_sim/srv/other_task.srv"
+services_str = "/home/hcappel1/Multi_Agent_Systems/src/robot_sim/srv/pos_task.srv;/home/hcappel1/Multi_Agent_Systems/src/robot_sim/srv/other_task.srv;/home/hcappel1/Multi_Agent_Systems/src/robot_sim/srv/planner.srv"
 pkg_name = "robot_sim"
 dependencies_str = "std_msgs;geometry_msgs;sensor_msgs"
 langs = "gencpp;geneus;genlisp;gennodejs;genpy"
