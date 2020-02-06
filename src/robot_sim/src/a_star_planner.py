@@ -28,7 +28,7 @@ class XYPlanner:
 		return g_score
 
 	def heuristic_cost(self,neighbor,goal):
-		heuristic_cost = math.sqrt((neighbor.x-goal.x)**2+(neighbor.y-goal.y)**2)
+		heuristic_cost = 100*(math.sqrt((neighbor.x-goal.x)**2+(neighbor.y-goal.y)**2))
 		return heuristic_cost
 
 	def goalReached(self,current,goal):
@@ -151,7 +151,7 @@ class XYPlanner:
 		goal_x = begin_end_coords[2]
 		goal_y = begin_end_coords[3]
 
-		print('passed initial a star')
+		#print('passed initial a star')
 
 
 		OpenSet = []
@@ -184,15 +184,15 @@ class XYPlanner:
 			current_node = OpenSet[0]
 
 			if self.goalReached(current_node,goal_node) == 'true':
-				print('FOUND A PATH')
+				#print('FOUND A PATH')
 
 				OpenSet.pop(0)
 				optimal_path = self.ReproducePath(current_node,ClosedSet)
 
 				path_coords = self.PathtoMessage(optimal_path)
 
-				print('path coordinates::')
-				print(path_coords)
+				#print('path coordinates::')
+				#print(path_coords)
 
 
 				# plannerResponse = path_coords

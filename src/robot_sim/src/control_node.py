@@ -50,12 +50,26 @@ class Robot:
 		return valid
 
 	def task_completion(self):
+		#task_management = Tasks_management()
 		print "task completed by " , self.name , " !"
 		self.tasks[0].task_finishers.append(self.name)
 		self.completed_tasks.append(self.tasks[0])
-		# print self.tasks
+		task_management.tasks_history.append(self.tasks[0])
+		#print self.tasks
 		self.tasks.pop(0)
-		# print self.tasks
+		#print self.tasks
+
+	def task_initiation(self):
+		if self.tasks[0].task_in_progress == False:
+			print('going to find a path')
+			self.pose_task = self.tasks[0].task_data
+			optimal_path = self.GetPath()
+			print('PATH::::')
+			print(optimal_path)
+			print('GOAL::::')
+			print(self.pose_task)
+			self.tasks[0].task_path = optimal_path
+			self.tasks[0].task_in_progress = True
 
 	def loop(self,time):
 		global old_time
@@ -64,12 +78,14 @@ class Robot:
 			if self.tasks[0].task_type == "position":
 
 
-				if self.tasks[0].task_in_progress == 'false':
-					self.pose_task = self.tasks[0].task_data
-					optimal_path = self.GetPath()
-					print('PATH::')
-					print(optimal_path)
-					self.tasks[0].task_in_progress = 'true'
+				# if self.tasks[0].task_in_progress == 'false':
+				# 	self.pose_task = self.tasks[0].task_data
+				# 	optimal_path = self.GetPath()
+				# 	print('PATH::')
+				# 	print(optimal_path)
+				# 	self.tasks[0].task_in_progress = 'true'
+
+				# optimal_path = [1, 2]
 				# rospy.wait_for_message(self.name+"/odom", Odometry)
 				# rospy.wait_for_message(self.name+"/scan", LaserScan)
 				# if (time-old_time) % 5  == 0 and time != old_time:
@@ -86,8 +102,8 @@ class Robot:
 					# 	print "Norm: ",self.norm
 					# print "Completed tasks: ", self.completed_tasks
 				try:
-					#self.pose_task = self.tasks[0].task_data
-					self.navigation(optimal_path)
+					self.pose_task = self.tasks[0].task_data
+					self.navigation()
 				except:
 					a=1
 					# print "Could not move to target"
@@ -130,7 +146,23 @@ class Robot:
 		X_r, Y_r, X_t, Y_t = self.GetTaskInfo(self.odom_msg,self.pose_task)
 		begin_end_coords = [X_r,Y_r,X_t,Y_t]
 
-		optimal_path = self.PlannerService(begin_end_coords)
+		optimal_path_raw_rev = self.PlannerService(begin_end_coords)
+		optimal_path_raw = optimal_path_raw_rev[::-1]
+		optimal_path = []
+		
+		iterate_size = len(optimal_path_raw)/2-1
+		i = 0
+
+		while i < iterate_size:
+			temp_coord = []
+			temp_y = optimal_path_raw[2*i]
+			temp_x = optimal_path_raw[2*i+1]
+			temp_coord.append(temp_x)
+			temp_coord.append(temp_y)
+			optimal_path.append(temp_coord)
+			i = i + 1
+
+		optimal_path.append([self.pose_task.x,self.pose_task.y])
 
 		return optimal_path
 	
@@ -142,9 +174,19 @@ class Robot:
 		Y_t2 = targ2.y
 		return sqrt(pow(X_t1-X_t2,2)+pow(Y_t1-Y_t2,2))
 
-	def moving_to_target(self,optimal_path):
+	def moving_to_target(self):
 		# pose = self.odom_msg
 		# targ = self.pose_task
+		self.task_initiation()
+
+		# Kp = 0.5
+		# if self.updated_scan and self.updated_odom:
+		# 	self.updated_scan = False
+		# 	self.updated_odom = False
+
+		# 	diff_x,diff_y,diff_angle = 
+
+
 
 		Kp = 0.5
 		if self.updated_scan and self.updated_odom:
@@ -184,8 +226,8 @@ class Robot:
 		self.vel_t = np.sign(self.vel_t)*min(abs(self.vel_t),t_sat)
 		self.vel_x = np.sign(self.vel_x)*min(abs(self.vel_x),x_sat)
 
-	def navigation(self,optimal_path): ###############################
-		self.moving_to_target(optimal_path)
+	def navigation(self): ###############################
+		self.moving_to_target()
 		self.obstacle_avoidance()
 		self.saturation()
 		vel_msg = Twist()
@@ -382,7 +424,8 @@ class Task:
 		self.task_id 		= task_id
 		self.task_finishers	= []
 		self.task_robots 	= []
-		self.task_in_progress = 'false'
+		self.task_in_progress = False ############
+		self.task_path = [] ###########
 
 
 class Tasks_management:
