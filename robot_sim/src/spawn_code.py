@@ -18,7 +18,7 @@ if __name__ == '__main__':
     # spawn_model = rospy.ServiceProxy("gazebo/spawn_sdf_model", SpawnModel)
     spawn_model = rospy.ServiceProxy("gazebo/spawn_urdf_model", SpawnModel)
     #This service accepts String(model_name)/String(model_xml)/Sting(robot_namespace-The one that says which is the name of the robot)/Pose InitialPose/String ref_frame
-    #And returns bool success and string status_message 
+    #And returns bool success and string status_message
 
 
     # user_input = sys.argv
@@ -27,13 +27,13 @@ if __name__ == '__main__':
     # init_pose = [-1 , 0 , 0]
     # num = 1
     # with open("$GAZEBO_MODEL_PATH/turtlebot3_waffle_pi/model.sdf", "r") as f:
-    # rospack = rospkg.RosPack()
-    # print(rospack.get_path('turtlebot3_gazebo_plugin'))
+    #rospack = rospkg.RosPack()
+    #print(rospack.get_path('turtlebot3_gazebo_plugin'))
     # os.chdir("~/")
     # THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
     # my_file = os.path.join(THIS_FOLDER, 'myfile.txt')
     # with open(os.environ.get('GAZEBO_MODEL_PATH')+"/turtlebot3_waffle_pi/model.sdf", "r") as f:
-    with open(os.environ.get('URDF_PATH')+"/turtlebot3_waffle_pi.xml", "r") as f:
+    with open("/home/gilbert/mas_ws/src/Multi_Agent_Systems/turtlebot3/turtlebot3_description/urdf/turtlebot3_waffle_pi.xml", "r") as f: # gotta love me some hard
         #this goes over the specifications of each robot
         product_xml = f.read()
 
@@ -44,7 +44,7 @@ if __name__ == '__main__':
         # item_name = "robot_{0}".format(number)
         print("Deleting model:%s", item_name)
         try:
-            delete_model(item_name)    
+            delete_model(item_name)
         except:
             print("what happened ?")
 

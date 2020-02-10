@@ -1,6 +1,7 @@
 <launch>
-  <node pkg="robot_sim" name="control_node"  type="control_node.py" output="screen"> 
+  <node pkg="robot_sim" name="control_node"  type="control_node.py" output="screen">
   </node>
+  <node pkg="robot_sim" name="add_task" type="add_task.py"> </node>
   <rosparam command="load" file="$(find robot_sim)/params/robots.yaml" />
 </launch>
 
