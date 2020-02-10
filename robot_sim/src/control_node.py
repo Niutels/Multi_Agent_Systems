@@ -14,6 +14,7 @@ from math import atan2,pi,sqrt,pow,cos,sin,exp
 from robot_sim.srv import pos_task,pos_taskResponse,other_task,other_taskResponse
 import numpy as np
 import time as t_
+from colorama import Fore
 
 import math
 import random
@@ -21,7 +22,7 @@ import random
 
 def getrpy(q):
 	return tf.transformations.euler_from_quaternion([q.x,q.y,q.z,q.w])
-# 
+#
 class Robot:
 
 	def odometryCb(self,msg):
@@ -74,7 +75,7 @@ class Robot:
 					# 	print "Norm: ",self.norm
 					# print "Completed tasks: ", self.completed_tasks
 				try:
-					self.pose_task = self.tasks[0].task_data 
+					self.pose_task = self.tasks[0].task_data
 					self.navigation()
 				except:
 					a=1
@@ -114,7 +115,7 @@ class Robot:
 			self.norm 	= sqrt(pow(diff_x,2)+pow(diff_y,2))
 			if self.norm > self.dist_tol:
 				self.vel_x = Kp*diff_x# + Kp*diff_y
-				self.vel_t = Kp*diff_angle 
+				self.vel_t = Kp*diff_angle
 			else:
 				self.task_completion()
 				self.vel_x = 0
@@ -163,7 +164,7 @@ class Robot:
 		self.tasks_map.append(temp_array)
 
 	def map_tasks_to_tasks(self):
-		i = 0 
+		i = 0
 		j = 0
 		passed = []
 		l_T = len(self.tasks)
@@ -363,8 +364,8 @@ class Tasks_management:
 	def run(self):
 		# Ask every robot to accept the task
 		self.seeding()
-		# Check every robot on task completion 
-		self.collect()			
+		# Check every robot on task completion
+		self.collect()
 		#
 		self.update()
 		# print "waiting: ",self.list_waiting_tasks
@@ -393,9 +394,9 @@ class Tasks_management:
 					task.task_robots.append(robot.name)
 			if len(task.task_robots)>0:
 				self.list_active_tasks.append(task)
-				print task.task_type," task has been accepted by: ",task.task_robots 
+				print task.task_type," task has been accepted by: ",task.task_robots
 				# Remove task from list_waiting_tasks
-				self.list_waiting_tasks.remove(task)	
+				self.list_waiting_tasks.remove(task)
 
 	def collect(self):
 		for task in self.list_active_tasks:
@@ -406,7 +407,7 @@ class Tasks_management:
 			if len(task.task_finishers)>0:
 				self.list_achieved_tasks.append(task)
 				# Remove task from list_active_tasks
-				self.list_active_tasks.remove(task)	
+				self.list_active_tasks.remove(task)
 
 if __name__ == '__main__':
 	global list_robots , task_handler , old_time
@@ -415,7 +416,7 @@ if __name__ == '__main__':
 	list_robots = []
 	task_handler = Tasks_management()
 	old_time = 0
-	rospy.init_node("MAS_node", anonymous=True) #make node 
+	rospy.init_node("MAS_node", anonymous=True) #make node
 	# Subscribe to Gazebo's clock
 	sub_clock 	= rospy.Subscriber("/clock", Clock, clockCb)
 	# Access yaml parameters file
