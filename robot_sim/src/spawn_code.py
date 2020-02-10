@@ -33,7 +33,7 @@ if __name__ == '__main__':
     # THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
     # my_file = os.path.join(THIS_FOLDER, 'myfile.txt')
     # with open(os.environ.get('GAZEBO_MODEL_PATH')+"/turtlebot3_waffle_pi/model.sdf", "r") as f:
-    with open("/home/gilbert/mas_ws/src/Multi_Agent_Systems/turtlebot3/turtlebot3_description/urdf/turtlebot3_waffle_pi.xml", "r") as f: # gotta love me some hard
+    with open(os.environ.get('URDF_PATH')+"/turtlebot3_waffle_pi.xml", "r") as f:
         #this goes over the specifications of each robot
         product_xml = f.read()
 
