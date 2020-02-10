@@ -2,10 +2,11 @@
 import sys
 import rospy
 from robot_sim.srv import pos_task,other_task
-from geometry_msgs.msg import Pose2D    
-import uuid 
+from geometry_msgs.msg import Pose2D
+import uuid
 import time
 from random import randint
+from colorama import Fore
 
 def send_task(task_data, task_type):
     try:
@@ -18,7 +19,8 @@ def send_task(task_data, task_type):
         print task_data,task_type,task_id
         task_response = task_request(task_data,task_type,task_id)
     except:
-        print "ahem"
+        print (Fore.RED+"Task Sending Failed")
+        print (Fore.RESET)
 if __name__ == "__main__":
     # task_type = input("Please provide a task type: [ position / ... ]: ")
     # if task_type == "position":
@@ -26,7 +28,7 @@ if __name__ == "__main__":
     #     data = list(input())
     #     task_data = Pose2D(x=data[0],y=data[1],theta=data[2])
     #     print task_data
-    # elif task_type == "other" : 
+    # elif task_type == "other" :
     #     print "other"
     #     task_data = input()
     # else:
