@@ -56,6 +56,7 @@ class Robot:
 		self.completed_tasks.append(self.tasks[0])
 		task_management.tasks_history.append(self.tasks[0])
 		#print self.tasks
+		print('task getting popped')
 		self.tasks.pop(0)
 		#print self.tasks
 
@@ -65,9 +66,6 @@ class Robot:
 			self.pose_task = self.tasks[0].task_data
 			optimal_path = self.GetPath()
 			print('PATH::::')
-			print(optimal_path)
-			print('GOAL::::')
-			print(self.pose_task)
 			self.tasks[0].task_path = optimal_path
 			self.tasks[0].task_in_progress = True
 
@@ -124,6 +122,20 @@ class Robot:
 		diff_angle = atan2(diff_y,diff_x)
 		return diff_x,diff_y,diff_angle
 
+	def delta_robot_path(self,pose,coord):
+		rpy 		= getrpy(pose.orientation)
+		yaw 		= rpy[2]
+		X_r = pose.position.x
+		Y_r = pose.position.y
+		T_r = yaw
+		X_t = coord[0]
+		Y_t = coord[1]
+		diff_x = (X_t-X_r)*cos(yaw)+(Y_t-Y_r)*sin(yaw)
+		diff_y = (Y_t-Y_r)*cos(yaw)-(X_t-X_r)*sin(yaw)
+		diff_angle = atan2(diff_y,diff_x)
+		return diff_x,diff_y,diff_angle
+
+
 	#HENRY WORK########
 	def GetTaskInfo(self,pose,targ):
 		rpy 		= getrpy(pose.orientation)
@@ -174,19 +186,41 @@ class Robot:
 		Y_t2 = targ2.y
 		return sqrt(pow(X_t1-X_t2,2)+pow(Y_t1-Y_t2,2))
 
-	def moving_to_target(self):
-		# pose = self.odom_msg
-		# targ = self.pose_task
+	def moving_to_target_planner(self):
 		self.task_initiation()
 
-		# Kp = 0.5
-		# if self.updated_scan and self.updated_odom:
-		# 	self.updated_scan = False
-		# 	self.updated_odom = False
+		Kp = 0.5
+		if self.updated_scan and self.updated_odom:
+			self.updated_scan = False
+			self.updated_odom = False
 
-		# 	diff_x,diff_y,diff_angle = 
+			print('passed initiation')
+
+			if len(self.tasks[0].task_path[0]) > 0:
+				diff_x,diff_y,diff_theta = self.delta_robot_path(self.odom_msg,self.tasks[0].task_path[0])
+				self.norm 	= sqrt(pow(diff_x,2)+pow(diff_y,2))
+			else:
+				self.norm = 0
+		
+			if self.norm > self.dist_tol:
+				print('moving robot')
+				self.vel_x = Kp*diff_x# + Kp*diff_y
+				self.vel_t = Kp*diff_angle
+				#print('published velocities') 
+			elif self.norm < self.dist_tol and len(self.tasks[0].task_path) > 0:
+				self.tasks[0].task_path.pop(0)
+				print('length of path')
+				print(len(self.tasks[0].task_path))
+			else:
+				print('TASK COMPLETED')
+				self.vel_x = 0
+				self.vel_y = 0
+				self.vel_t = 0
+				self.task_completion()
 
 
+	def moving_to_target(self):
+		self.task_initiation()
 
 		Kp = 0.5
 		if self.updated_scan and self.updated_odom:
