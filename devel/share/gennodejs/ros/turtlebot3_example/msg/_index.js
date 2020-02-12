@@ -1,1 +1,0 @@
-/home/hcappel1/Multi_Agent_Systems/devel/.private/turtlebot3_example/share/gennodejs/ros/turtlebot3_example/msg/_index.js

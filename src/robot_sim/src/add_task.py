@@ -50,6 +50,6 @@ if __name__ == "__main__":
     while i < task_lim:
         task_data = Pose2D(x=randint(-10,10),y=randint(-10,10),theta=0)
         send_task(task_data,task_type)
-        time.sleep(0.1)
+        time.sleep(1)
         i = i + 1
         #print('task sending...')

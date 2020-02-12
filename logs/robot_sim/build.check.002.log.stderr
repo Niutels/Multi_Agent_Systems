@@ -1,8 +1,0 @@
-[31m[1mCMake Error[0m at /opt/ros/kinetic/share/genmsg/cmake/genmsg-extras.cmake:263 (message):
-  Messages depends on unknown pkg: Float32MultiArray (Missing
-  'find_package(Float32MultiArray)'?)
-[36mCall Stack (most recent call first):[0m
-  CMakeLists.txt:29 (generate_messages)
-
-
-make: *** [cmake_check_build_system] Error 1

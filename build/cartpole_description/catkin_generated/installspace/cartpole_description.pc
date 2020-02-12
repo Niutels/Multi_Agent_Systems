@@ -1,8 +1,0 @@
-prefix=/home/hcappel1/Multi_Agent_Systems/install
-
-Name: cartpole_description
-Description: Description of cartpole_description
-Version: 0.0.0
-Cflags: 
-Libs: -L/home/hcappel1/Multi_Agent_Systems/install/lib 
-Requires: 

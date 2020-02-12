@@ -1,8 +1,0 @@
-prefix=/home/hcappel1/Multi_Agent_Systems/devel/.private/turtlebot3_teleop
-
-Name: turtlebot3_teleop
-Description: Description of turtlebot3_teleop
-Version: 1.2.1
-Cflags: 
-Libs: -L/home/hcappel1/Multi_Agent_Systems/devel/.private/turtlebot3_teleop/lib 
-Requires: rospy geometry_msgs

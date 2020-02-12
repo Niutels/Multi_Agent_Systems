@@ -1,8 +1,0 @@
-prefix=/home/hcappel1/Multi_Agent_Systems/install
-
-Name: turtlebot3_fake
-Description: Description of turtlebot3_fake
-Version: 1.2.0
-Cflags: -I/home/hcappel1/Multi_Agent_Systems/install/include
-Libs: -L/home/hcappel1/Multi_Agent_Systems/install/lib 
-Requires: roscpp std_msgs sensor_msgs geometry_msgs nav_msgs tf turtlebot3_msgs

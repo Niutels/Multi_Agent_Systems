@@ -1,1 +1,0 @@
-/home/hcappel1/Multi_Agent_Systems/devel/.private/openai_ros/share/gennodejs/ros/openai_ros/_index.js

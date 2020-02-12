@@ -220,7 +220,7 @@ class Robot:
 
 
 	def moving_to_target(self):
-		self.task_initiation()
+		#self.task_initiation()
 
 		Kp = 0.5
 		if self.updated_scan and self.updated_odom:
@@ -374,6 +374,9 @@ class Robot:
 			# print self.curr_solution
 			# print self.tasks
 			self.tasks = [self.tasks[i] for i in self.curr_solution]
+			print('current solution')
+			print(self.curr_solution)
+			
 
 	def __init__(self,param_file,name):
 		self.name  			= name
@@ -421,7 +424,7 @@ def clockCb(msg):
 		except:
 			a=1
 			# print robot.name + " could not go through"
-	if (time-old_time) % 5  == 0 and time != old_time:
+	if (time-old_time) % 10  == 0 and time != old_time:
 		task_handler.status()
 		old_time = time
 		for robot in list_robots:
