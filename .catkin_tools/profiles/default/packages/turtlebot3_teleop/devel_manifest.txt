@@ -1,6 +1,0 @@
-turtlebot3/turtlebot3_teleop
-/home/hcappel1/Multi_Agent_Systems/devel/.private/turtlebot3_teleop/cmake.lock /home/hcappel1/Multi_Agent_Systems/devel/./cmake.lock
-/home/hcappel1/Multi_Agent_Systems/devel/.private/turtlebot3_teleop/lib/pkgconfig/turtlebot3_teleop.pc /home/hcappel1/Multi_Agent_Systems/devel/lib/pkgconfig/turtlebot3_teleop.pc
-/home/hcappel1/Multi_Agent_Systems/devel/.private/turtlebot3_teleop/lib/python2.7/dist-packages/turtlebot3_teleop/__init__.py /home/hcappel1/Multi_Agent_Systems/devel/lib/python2.7/dist-packages/turtlebot3_teleop/__init__.py
-/home/hcappel1/Multi_Agent_Systems/devel/.private/turtlebot3_teleop/share/turtlebot3_teleop/cmake/turtlebot3_teleopConfig-version.cmake /home/hcappel1/Multi_Agent_Systems/devel/share/turtlebot3_teleop/cmake/turtlebot3_teleopConfig-version.cmake
-/home/hcappel1/Multi_Agent_Systems/devel/.private/turtlebot3_teleop/share/turtlebot3_teleop/cmake/turtlebot3_teleopConfig.cmake /home/hcappel1/Multi_Agent_Systems/devel/share/turtlebot3_teleop/cmake/turtlebot3_teleopConfig.cmake

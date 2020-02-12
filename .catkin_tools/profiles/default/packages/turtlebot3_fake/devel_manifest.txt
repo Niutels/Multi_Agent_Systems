@@ -1,6 +1,0 @@
-turtlebot3/turtlebot3_simulations/turtlebot3_fake
-/home/hcappel1/Multi_Agent_Systems/devel/.private/turtlebot3_fake/cmake.lock /home/hcappel1/Multi_Agent_Systems/devel/./cmake.lock
-/home/hcappel1/Multi_Agent_Systems/devel/.private/turtlebot3_fake/lib/pkgconfig/turtlebot3_fake.pc /home/hcappel1/Multi_Agent_Systems/devel/lib/pkgconfig/turtlebot3_fake.pc
-/home/hcappel1/Multi_Agent_Systems/devel/.private/turtlebot3_fake/lib/turtlebot3_fake/turtlebot3_fake_node /home/hcappel1/Multi_Agent_Systems/devel/lib/turtlebot3_fake/turtlebot3_fake_node
-/home/hcappel1/Multi_Agent_Systems/devel/.private/turtlebot3_fake/share/turtlebot3_fake/cmake/turtlebot3_fakeConfig-version.cmake /home/hcappel1/Multi_Agent_Systems/devel/share/turtlebot3_fake/cmake/turtlebot3_fakeConfig-version.cmake
-/home/hcappel1/Multi_Agent_Systems/devel/.private/turtlebot3_fake/share/turtlebot3_fake/cmake/turtlebot3_fakeConfig.cmake /home/hcappel1/Multi_Agent_Systems/devel/share/turtlebot3_fake/cmake/turtlebot3_fakeConfig.cmake
