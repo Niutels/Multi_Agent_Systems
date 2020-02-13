@@ -135,6 +135,9 @@ class Robot:
 		diff_angle = atan2(diff_y,diff_x)
 		return diff_x,diff_y,diff_angle
 
+	def delta_robot_path_planner(self,path_params):
+		time = msg.clock.secs
+
 
 	#HENRY WORK########
 	def GetTaskInfo(self,pose,targ):
@@ -177,7 +180,26 @@ class Robot:
 		optimal_path.append([self.pose_task.x,self.pose_task.y])
 
 		return optimal_path
-	
+
+	def PathTrajectory(self):
+		vel = 5
+		if self.tasks[0].task_begin == True:
+			x1 = [self.odom_msg.position.x,self.odom_msg.position.y]
+			x2 = self.tasks[0].task_path[1]
+
+		else:
+			x1 = self.tasks[0].task_path[0]
+			x2 = self.tasks[0].task_path[1]
+
+		diff_x = x1[0]-x2[0]
+		diff_y = x1[1]-x2[1]
+
+		diff_theta = atan2(diff_y,diff_x)
+		vel_x = vel*cos(diff_theta)
+		vel_y = vel*sin(diff_theta)
+
+		return vel_x,vel_y
+
 
 	def norm_task_task(self,targ1,targ2):
 		X_t1 = targ1.x
@@ -187,36 +209,36 @@ class Robot:
 		return sqrt(pow(X_t1-X_t2,2)+pow(Y_t1-Y_t2,2))
 
 	def moving_to_target_planner(self):
-		self.task_initiation()
+		if len(self.curr_solution) != 0:
+			self.task_initiation()
+	
+			Kp = 0.5
+			if self.updated_scan and self.updated_odom:
+				self.updated_scan = False
+				self.updated_odom = False
 
-		Kp = 0.5
-		if self.updated_scan and self.updated_odom:
-			self.updated_scan = False
-			self.updated_odom = False
 
-			print('passed initiation')
-
-			if len(self.tasks[0].task_path[0]) > 0:
-				diff_x,diff_y,diff_theta = self.delta_robot_path(self.odom_msg,self.tasks[0].task_path[0])
-				self.norm 	= sqrt(pow(diff_x,2)+pow(diff_y,2))
-			else:
-				self.norm = 0
-		
-			if self.norm > self.dist_tol:
-				print('moving robot')
-				self.vel_x = Kp*diff_x# + Kp*diff_y
-				self.vel_t = Kp*diff_angle
+				if len(self.tasks[0].task_path) > 0:
+					diff_x,diff_y,diff_angle = self.delta_robot_path(self.odom_msg,self.tasks[0].task_path[0])
+					self.norm 	= sqrt(pow(diff_x,2)+pow(diff_y,2))
+				else:
+					self.norm = 0
+			
+				if self.norm > self.dist_tol:
+					self.vel_x = Kp*diff_x# + Kp*diff_y
+					self.vel_t = Kp*diff_angle
 				#print('published velocities') 
-			elif self.norm < self.dist_tol and len(self.tasks[0].task_path) > 0:
-				self.tasks[0].task_path.pop(0)
-				print('length of path')
-				print(len(self.tasks[0].task_path))
-			else:
-				print('TASK COMPLETED')
-				self.vel_x = 0
-				self.vel_y = 0
-				self.vel_t = 0
-				self.task_completion()
+				elif (self.norm < self.dist_tol) and (len(self.tasks[0].task_path) > 0):
+					self.tasks[0].task_path.pop(0)
+					path_params = PathParams()
+					print('length of path')
+					print(len(self.tasks[0].task_path))
+				else:
+					print('TASK COMPLETED')
+					self.vel_x = 0
+					self.vel_y = 0
+					self.vel_t = 0
+					self.task_completion()
 
 
 	def moving_to_target(self):
@@ -261,7 +283,7 @@ class Robot:
 		self.vel_x = np.sign(self.vel_x)*min(abs(self.vel_x),x_sat)
 
 	def navigation(self): ###############################
-		self.moving_to_target()
+		self.moving_to_target_planner()
 		self.obstacle_avoidance()
 		self.saturation()
 		vel_msg = Twist()
@@ -424,7 +446,7 @@ def clockCb(msg):
 		except:
 			a=1
 			# print robot.name + " could not go through"
-	if (time-old_time) % 10  == 0 and time != old_time:
+	if (time-old_time) % 100  == 0 and time != old_time:
 		task_handler.status()
 		old_time = time
 		for robot in list_robots:
@@ -461,7 +483,8 @@ class Task:
 		self.task_id 		= task_id
 		self.task_finishers	= []
 		self.task_robots 	= []
-		self.task_in_progress = False ############
+		self.task_in_progress = False
+		self.task_begin = True ############
 		self.task_path = [] ###########
 
 
