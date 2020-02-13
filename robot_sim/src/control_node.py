@@ -33,7 +33,7 @@ class Robot:
 		self.laser_msg = msg
 		self.updated_scan = True
 
-	def doability(self,req):
+	def doability(self,req):  # TODO: Change doability
 		if req.task_type == "position":
 			if self.specs["vel"]>0:
 				return True
@@ -257,6 +257,9 @@ class Robot:
 			# print self.tasks
 			self.tasks = [self.tasks[i] for i in self.curr_solution]
 
+	def send_tasks_map(self):
+		Tasks_management.task_matrix.append(self.tasks_map)
+
 	def __init__(self,param_file,name):
 		self.name  			= name
 		self.specs 			= param_file["specs"]
@@ -305,7 +308,8 @@ def clockCb(msg):
 		old_time = time
 		for robot in list_robots:
 			try:
-				robot.update_tasks_map()
+				robot.update_tasks_map()  # at every 5 ticks, update the task map, might be hard to scale
+				robot.send_tasks_map()
 			except:
 				a=1
 				# print robot.name + " could not do task allocation"
@@ -345,6 +349,7 @@ class Tasks_management:
 		self.list_active_tasks 		= []
 		self.list_achieved_tasks 	= []
 		self.tasks_history 			= []
+		self.task_matrix			= []
 		self.updated 				= False
 		self.pos_task_reception 	= rospy.Service('task_node/pos', pos_task, self.pos_task_reception)
 		self.other_task_reception 	= rospy.Service('task_node/other', other_task, self.other_task_reception)
@@ -362,6 +367,13 @@ class Tasks_management:
 		# self.updated = True
 
 	def run(self):
+		#TODO change from asking every robot to accept the task to asking the robots
+		# to return their plan,  find the priorities, then assign them out
+		# self.seeding()
+		# self.priortization
+
+
+
 		# Ask every robot to accept the task
 		self.seeding()
 		# Check every robot on task completion
@@ -387,6 +399,7 @@ class Tasks_management:
 			self.list_achieved_tasks.remove(task)
 
 	def seeding(self):
+		# This will only send the task, another function will assign the task
 		for task in self.list_waiting_tasks:
 			for robot in list_robots:
 				# Check if the task has been accepted and save which robots did
@@ -408,6 +421,13 @@ class Tasks_management:
 				self.list_achieved_tasks.append(task)
 				# Remove task from list_active_tasks
 				self.list_active_tasks.remove(task)
+	def priortization(self):  # priority assigment
+		depth = 5  # Maximum bundling depth
+		priorites_matrix = self.task_matrix[:, 0:depth]
+		for task in self.list_waiting_tasks:
+			str(task.task_id).count = priorites_matrix.count(task)
+
+
 
 if __name__ == '__main__':
 	global list_robots , task_handler , old_time
