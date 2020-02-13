@@ -18,8 +18,10 @@ def send_task(task_data, task_type):
         task_id = int(str_task_id[:15])
         #print task_data,task_type,task_id
         task_response = task_request(task_data,task_type,task_id)
-    except:
+    except Exception as e:
         print (Fore.RED+"Task Sending Failed")
+        print ("The error:")
+        print (e)
         print (Fore.RESET)
 if __name__ == "__main__":
     # task_type = input("Please provide a task type: [ position / ... ]: ")
