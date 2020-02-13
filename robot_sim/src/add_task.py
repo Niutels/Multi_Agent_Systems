@@ -16,7 +16,7 @@ def send_task(task_data, task_type):
             task_request = rospy.ServiceProxy('task_node/other', other_task)
         str_task_id = str(uuid.uuid1().int)
         task_id = int(str_task_id[:15])
-        print task_data,task_type,task_id
+        #print task_data,task_type,task_id
         task_response = task_request(task_data,task_type,task_id)
     except:
         print (Fore.RED+"Task Sending Failed")
@@ -47,7 +47,11 @@ if __name__ == "__main__":
     # time.sleep(2)
     # task_data = Pose2D(x=-1,y=-5,theta=1)
     # send_task(task_data,task_type)
-    while True:
+    task_lim = 10
+    i = 0
+    while i < task_lim:
         task_data = Pose2D(x=randint(-10,10),y=randint(-10,10),theta=0)
         send_task(task_data,task_type)
-        time.sleep(6)
+        time.sleep(1)
+        i = i + 1
+        #print('task sending...')

@@ -18,6 +18,7 @@ add_service_files(
   FILES
   pos_task.srv
   other_task.srv
+  planner.srv
 )
 
 add_message_files(
@@ -41,5 +42,6 @@ target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
 catkin_package(
   DEPENDS 
     roscpp 
-    gazebo_ros 
+    gazebo_ros
+    message_runtime 
 )
