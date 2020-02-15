@@ -135,8 +135,33 @@ class Robot:
 		diff_angle = atan2(diff_y,diff_x)
 		return diff_x,diff_y,diff_angle
 
-	def delta_robot_path_planner(self,path_params):
-		time = msg.clock.secs
+	def delta_robot_path_planner(self,pose,path_traj,path_coord_g):
+		rpy = getrpy(pose.orientation)
+		yaw = rpy[2]
+		X_r = pose.position.x
+		Y_r = pose.position.y
+		X_t = path_traj[0]
+		Y_t = path_traj[1]
+		X_g = path_coord_g[0]
+		Y_g = path_coord_g[1]
+
+		print 'current robot: ', [X_r,Y_r]
+		print 'where Im going', [X_g,Y_g]
+
+		
+
+		diff_x = (X_t-X_r)*cos(yaw)+(Y_t-Y_r)*sin(yaw)
+		diff_y = (Y_t-Y_r)*cos(yaw)-(X_t-X_r)*sin(yaw)
+		diff_angle = atan2(diff_y,diff_x)
+
+		norm = sqrt((X_r-X_g)**2+(Y_r-Y_g)**2)
+		print(norm)
+		if norm < 1:
+			goal = True
+		else:
+			goal = False
+
+		return diff_x,diff_y,diff_angle,goal
 
 
 	#HENRY WORK########
@@ -181,24 +206,25 @@ class Robot:
 
 		return optimal_path
 
-	def PathTrajectory(self):
-		vel = 5
-		if self.tasks[0].task_begin == True:
-			x1 = [self.odom_msg.position.x,self.odom_msg.position.y]
-			x2 = self.tasks[0].task_path[1]
+	def PathTrajectory(self,start_time,start_coords):
+		###include time here
+		running_time = rospy.Time.now().to_sec()
+		t = running_time - start_time
+		print 'running time', running_time
+		print 'start time', start_time
+		T = 10
 
-		else:
-			x1 = self.tasks[0].task_path[0]
-			x2 = self.tasks[0].task_path[1]
+		x1 = start_coords
+		x2 = self.tasks[0].task_path[0]
 
 		diff_x = x1[0]-x2[0]
 		diff_y = x1[1]-x2[1]
-
 		diff_theta = atan2(diff_y,diff_x)
-		vel_x = vel*cos(diff_theta)
-		vel_y = vel*sin(diff_theta)
 
-		return vel_x,vel_y
+		x_t = diff_x*t/T + x1[0]
+		y_t = diff_y*t/T + x1[1]
+
+		return [x_t,y_t]
 
 
 	def norm_task_task(self,targ1,targ2):
@@ -208,7 +234,10 @@ class Robot:
 		Y_t2 = targ2.y
 		return sqrt(pow(X_t1-X_t2,2)+pow(Y_t1-Y_t2,2))
 
+
 	def moving_to_target_planner(self):
+		global start_time
+		global start_coords
 		if len(self.curr_solution) != 0:
 			self.task_initiation()
 	
@@ -217,28 +246,59 @@ class Robot:
 				self.updated_scan = False
 				self.updated_odom = False
 
+				#while len(self.tasks[0].task_path) > 0:
+				if self.tasks[0].task_begin == True:
+					start_time = rospy.Time.now().to_sec()
+					start_coords = [self.odom_msg.position.x,self.odom_msg.position.y]
+					self.tasks[0].task_begin = False
 
-				if len(self.tasks[0].task_path) > 0:
-					diff_x,diff_y,diff_angle = self.delta_robot_path(self.odom_msg,self.tasks[0].task_path[0])
-					self.norm 	= sqrt(pow(diff_x,2)+pow(diff_y,2))
-				else:
-					self.norm = 0
-			
-				if self.norm > self.dist_tol:
-					self.vel_x = Kp*diff_x# + Kp*diff_y
-					self.vel_t = Kp*diff_angle
-				#print('published velocities') 
-				elif (self.norm < self.dist_tol) and (len(self.tasks[0].task_path) > 0):
+
+				path_traj = self.PathTrajectory(start_time,start_coords)
+				diff_x,diff_y,diff_angle,goal = self.delta_robot_path_planner(self.odom_msg,path_traj,self.tasks[0].task_path[0])
+
+				print 'error values:', diff_x,diff_y,diff_angle,goal
+
+				self.vel_x = -Kp*diff_x
+				self.vel_t = -Kp*diff_angle
+	
+
+
+				if goal == True:
+					self.tasks[0].task_begin = True
 					self.tasks[0].task_path.pop(0)
-					path_params = PathParams()
 					print('length of path')
 					print(len(self.tasks[0].task_path))
-				else:
+
+				if len(self.tasks[0].task_path) == 0:
 					print('TASK COMPLETED')
 					self.vel_x = 0
 					self.vel_y = 0
 					self.vel_t = 0
 					self.task_completion()
+
+
+
+				# if len(self.tasks[0].task_path) > 0:
+				# 	diff_x,diff_y,diff_angle = self.delta_robot_path(self.odom_msg,self.tasks[0].task_path[0])
+				# 	self.norm 	= sqrt(pow(diff_x,2)+pow(diff_y,2))
+				# else:
+				# 	self.norm = 0
+			
+				# if self.norm > self.dist_tol:
+				# 	self.vel_x = Kp*diff_x# + Kp*diff_y
+				# 	self.vel_t = Kp*diff_angle
+				# #print('published velocities') 
+				# elif (self.norm < self.dist_tol) and (len(self.tasks[0].task_path) > 0):
+				# 	self.tasks[0].task_path.pop(0)
+				# 	path_params = PathParams()
+				# 	print('length of path')
+				# 	print(len(self.tasks[0].task_path))
+				# else:
+				# 	print('TASK COMPLETED')
+				# 	self.vel_x = 0
+				# 	self.vel_y = 0
+				# 	self.vel_t = 0
+				# 	self.task_completion()
 
 
 	def moving_to_target(self):
@@ -446,7 +506,7 @@ def clockCb(msg):
 		except:
 			a=1
 			# print robot.name + " could not go through"
-	if (time-old_time) % 100  == 0 and time != old_time:
+	if (time-old_time) % 50  == 0 and time != old_time:
 		task_handler.status()
 		old_time = time
 		for robot in list_robots:
