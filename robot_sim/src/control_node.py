@@ -156,7 +156,7 @@ class Robot:
 
 		norm = sqrt((X_r-X_g)**2+(Y_r-Y_g)**2)
 		print(norm)
-		if norm < 1:
+		if norm < 3:
 			goal = True
 		else:
 			goal = False
@@ -210,8 +210,6 @@ class Robot:
 		###include time here
 		running_time = rospy.Time.now().to_sec()
 		t = running_time - start_time
-		print 'running time', running_time
-		print 'start time', start_time
 		T = 10
 
 		x1 = start_coords
@@ -244,8 +242,10 @@ class Robot:
 		if len(self.curr_solution) != 0:
 			self.task_initiation()
 	
-			Kp = 0.2
-			Kd = 0.2
+			Kp_x = 1
+			Kd_x = 0.2
+			Kp_a = 0.05
+			Kd_a = 0.1
 			if self.updated_scan and self.updated_odom:
 				self.updated_scan = False
 				self.updated_odom = False
@@ -266,22 +266,13 @@ class Robot:
 				print 'error values:', diff_x,diff_y,diff_angle,goal
 
 				current_time = rospy.Time.now().to_sec()
-				print 'current time:', current_time
 
-				print 'diff_x_prev:', diff_x_prev
-				print 'diff_angle_prev: ', diff_angle_prev
-				print 'old_time: ', old_time
-
-				self.vel_x = -Kp*diff_x - Kd*(diff_x-diff_x_prev)/(current_time - old_time + 0.01)
-				self.vel_t = -Kp*diff_angle - Kd*(diff_angle-diff_angle_prev)/(current_time - old_time + 0.01)
+				self.vel_x = -Kp_x*diff_x - Kd_x*(diff_x-diff_x_prev)/(current_time - old_time + 0.01)
+				self.vel_t = -Kp_a*diff_angle - Kd_a*(diff_angle-diff_angle_prev)/(current_time - old_time + 0.01)
 
 				diff_x_prev = diff_x
 				diff_angle_prev = diff_angle
-
-				print 'old iterations:', diff_x_prev, diff_angle_prev
-
 				old_time = rospy.Time.now().to_sec()
-				print 'old time:', old_time
 	
 
 
@@ -528,7 +519,7 @@ def clockCb(msg):
 		except:
 			a=1
 			# print robot.name + " could not go through"
-	if (time-old_time) % 10  == 0 and time != old_time:
+	if (time-old_time) % 50  == 0 and time != old_time:
 		task_handler.status()
 		old_time = time
 		for robot in list_robots:
