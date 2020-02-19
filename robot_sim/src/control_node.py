@@ -238,10 +238,14 @@ class Robot:
 	def moving_to_target_planner(self):
 		global start_time
 		global start_coords
+		global diff_x_prev 
+		global diff_angle_prev 
+		global old_time
 		if len(self.curr_solution) != 0:
 			self.task_initiation()
 	
-			Kp = 0.5
+			Kp = 0.2
+			Kd = 0.2
 			if self.updated_scan and self.updated_odom:
 				self.updated_scan = False
 				self.updated_odom = False
@@ -251,6 +255,9 @@ class Robot:
 					start_time = rospy.Time.now().to_sec()
 					start_coords = [self.odom_msg.position.x,self.odom_msg.position.y]
 					self.tasks[0].task_begin = False
+					diff_x_prev = 0
+					diff_angle_prev = 0
+					old_time = rospy.Time.now().to_sec()
 
 
 				path_traj = self.PathTrajectory(start_time,start_coords)
@@ -258,8 +265,23 @@ class Robot:
 
 				print 'error values:', diff_x,diff_y,diff_angle,goal
 
-				self.vel_x = -Kp*diff_x
-				self.vel_t = -Kp*diff_angle
+				current_time = rospy.Time.now().to_sec()
+				print 'current time:', current_time
+
+				print 'diff_x_prev:', diff_x_prev
+				print 'diff_angle_prev: ', diff_angle_prev
+				print 'old_time: ', old_time
+
+				self.vel_x = -Kp*diff_x - Kd*(diff_x-diff_x_prev)/(current_time - old_time + 0.01)
+				self.vel_t = -Kp*diff_angle - Kd*(diff_angle-diff_angle_prev)/(current_time - old_time + 0.01)
+
+				diff_x_prev = diff_x
+				diff_angle_prev = diff_angle
+
+				print 'old iterations:', diff_x_prev, diff_angle_prev
+
+				old_time = rospy.Time.now().to_sec()
+				print 'old time:', old_time
 	
 
 
@@ -506,7 +528,7 @@ def clockCb(msg):
 		except:
 			a=1
 			# print robot.name + " could not go through"
-	if (time-old_time) % 50  == 0 and time != old_time:
+	if (time-old_time) % 10  == 0 and time != old_time:
 		task_handler.status()
 		old_time = time
 		for robot in list_robots:
