@@ -156,7 +156,7 @@ class Robot:
 
 		norm = sqrt((X_r-X_g)**2+(Y_r-Y_g)**2)
 		print(norm)
-		if norm < 3:
+		if norm < 1:
 			goal = True
 		else:
 			goal = False
@@ -211,6 +211,7 @@ class Robot:
 		running_time = rospy.Time.now().to_sec()
 		t = running_time - start_time
 		T = 10
+		vel = 0.5
 
 		x1 = start_coords
 		x2 = self.tasks[0].task_path[0]
@@ -222,7 +223,40 @@ class Robot:
 		x_t = diff_x*t/T + x1[0]
 		y_t = diff_y*t/T + x1[1]
 
+		# x_t = vel*t + x1[0]
+		# y_t = (diff_y/diff_x)*x_t + x1[1]
+
 		return [x_t,y_t]
+
+	def PathTrajectoryCurve(self,start_time,start_coords):
+		running_time = rospy.Time.now().to_sec()
+		t = running_time - start_time
+		vel = 0.5
+
+		x0 = start_coords
+		x1 = self.tasks[0].task_path[0]
+		x2 = self.tasks[0].task_path[1]
+		x3 = self.tasks[0].task_path[2]
+		x4 = self.tasks[0].task_path[3]
+
+		A = np.matrix([[x0[0]**4,x0[0]**3,x0[0]**2,x0[0],1],[x1[0]**4,x1[0]**3,x1[0]**2,x1[0],1],[x2[0]**4,x2[0]**3,x2[0]**2,x2[0],1],[x3[0]**4,x3[0]**3,x3[0]**2,x3[0],1],[x4[0]**4,x4[0]**3,x4[0]**2,x4[0],1]])
+		Y = np.matrix([[x0[1]],[x1[1]],[x2[1]],[x3[1]],[x4[1]]])
+		const_vec = np.linalg.pinv(A)*Y
+
+		a = const_vec[0,0]
+		b = const_vec[1,0]
+		c = const_vec[2,0]
+		d = const_vec[3,0]
+		e = const_vec[4,0]
+
+		x_t = vel*t + x0[0]
+		y_t = a*x_t**4 + b*x_t**3 + c*x_t**2 + d*x_t + e + x0[1]
+
+		return [x_t, y_t]
+
+
+
+
 
 
 	def norm_task_task(self,targ1,targ2):
@@ -242,9 +276,9 @@ class Robot:
 		if len(self.curr_solution) != 0:
 			self.task_initiation()
 	
-			Kp_x = 1
+			Kp_x = 0.5
 			Kd_x = 0.2
-			Kp_a = 0.05
+			Kp_a = 0.5
 			Kd_a = 0.1
 			if self.updated_scan and self.updated_odom:
 				self.updated_scan = False
@@ -261,14 +295,19 @@ class Robot:
 
 
 				path_traj = self.PathTrajectory(start_time,start_coords)
+				path_traj_curve = self.PathTrajectoryCurve(start_time,start_coords)
+
+				print 'LIN::', path_traj
+				print 'CURVE::', path_traj_curve
+
 				diff_x,diff_y,diff_angle,goal = self.delta_robot_path_planner(self.odom_msg,path_traj,self.tasks[0].task_path[0])
 
 				print 'error values:', diff_x,diff_y,diff_angle,goal
 
 				current_time = rospy.Time.now().to_sec()
 
-				self.vel_x = -Kp_x*diff_x - Kd_x*(diff_x-diff_x_prev)/(current_time - old_time + 0.01)
-				self.vel_t = -Kp_a*diff_angle - Kd_a*(diff_angle-diff_angle_prev)/(current_time - old_time + 0.01)
+				self.vel_x = Kp_x*diff_x #- Kd_x*(diff_x-diff_x_prev)/(current_time - old_time + 0.01)
+				self.vel_t = Kp_a*diff_angle #- Kd_a*(diff_angle-diff_angle_prev)/(current_time - old_time + 0.01)
 
 				diff_x_prev = diff_x
 				diff_angle_prev = diff_angle
